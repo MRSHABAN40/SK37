@@ -1,3 +1,10 @@
+
+> **PAIRING LINK (01)**
+  <a href='https://pair5-6dde42c2f9cf.herokuapp.com/' target="_blank">
+    <img src='https://img.shields.io/badge/PAIR_CODE_1-00FFFF?style=for-the-badge&logo=matrix&logoColor=white&labelColor=000000'/>
+  </a></br>
+
+
 ## 📡 DEPLOYMENT OPTIONS
 
 <div align="center">
