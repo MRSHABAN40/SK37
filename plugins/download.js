@@ -44,76 +44,81 @@ async (conn, mek, m, { from, args, q, reply }) => {
     }
 });
 
-cmd({ 'pattern': "tiktok", 'alias': ['tt'], 'react': '🎥', 'desc': "download tt videos", 'category': "download", 'filename': __filename }, async (conn, m, store, { from, quoted, q, reply }) => { try { if (!q || !q.startsWith('https://')) { return reply("Need a valid TikTok URL"); }
-
-store.react('⬇️');
-
-let response = await fetch(`https://bk9.fun/download/tiktok2?url=${encodeURIComponent(q)}`);
-let jsonData = await response.json();
-
-if (!jsonData.status) {
-  return reply("*Failed to fetch video. Please try again later.*");
-}
-
-let tiktokData = jsonData.BK9;
-let captionMessage = `
-
-𝗧𝗜𝗞𝗧𝗢𝗞 𝗗𝗢𝗪𝗡𝗟𝗢𝗔𝗗𝗘𝗥 🎥
-┃▸Title: ${tiktokData.description || 'No title'} 
-┃▸Username:${tiktokData.username} 
-┃▸Plays:${tiktokData.played} 
-┃▸Comments:${tiktokData.commented} 
-┃▸Saves:${tiktokData.saved} 
-┃▸Shares:${tiktokData.shared}
-
-🎥 1. No Watermark 
-🎥 2. With Watermark 
-🎵 3. Audio Only `;
-
-const sentMessage = await conn.sendMessage(from, {
-  'image': { 'url': tiktokData.thumbnail },
-  'caption': captionMessage
-});
-
-const messageID = sentMessage.key.id;
-
-conn.ev.on("messages.upsert", async message => {
-  const receivedMessage = message.messages[0];
-  if (!receivedMessage.message) return;
-
-  const userResponse = receivedMessage.message.conversation || receivedMessage.message.extendedTextMessage?.text;
-  const chatID = receivedMessage.key.remoteJid;
-  const isReplyToBotMessage = receivedMessage.message.extendedTextMessage &&
-                              receivedMessage.message.extendedTextMessage.contextInfo.stanzaId === messageID;
-
-  if (isReplyToBotMessage) {
-    await conn.sendMessage(chatID, { 'react': { 'text': '⬇️', 'key': receivedMessage.key } });
-
-    let downloadLinks = tiktokData.video;
-
-    if (userResponse === '1') {
-      await conn.sendMessage(chatID, {
-        'video': { 'url': downloadLinks.noWatermark },
-        'caption': "*Downloaded SHABAN-MD*"
-      }, { 'quoted': receivedMessage });
-    } else if (userResponse === '2') {
-      await conn.sendMessage(chatID, {
-        'video': { 'url': downloadLinks.withWatermark },
-        'caption': "*Downloaded SHABAN-MD*"
-      }, { 'quoted': receivedMessage });
-    } else if (userResponse === '3') {
-      await conn.sendMessage(chatID, {
-        'audio': { 'url': tiktokData.audio },
-        'mimetype': "audio/mpeg"
-      }, { 'quoted': receivedMessage });
-    } else {
-      reply("*Invalid selection. Please reply with 1, 2, or 3.*");
+cmd({
+  pattern: "tiktok",
+  alias: ['tt'],
+  react: '🎥',
+  desc: "download tt videos",
+  category: "download",
+  filename: __filename
+}, async (conn, m, store, { from, quoted, q, reply }) => {
+  try {
+    if (!q || !q.startsWith('https://')) {
+      return reply("Please provide a valid TikTok URL.");
     }
+
+    store.react('⬇️');
+
+    const response = await fetch(`https://api.cypherx.dpdns.org/tiktok?url=${encodeURIComponent(q)}`);
+    const json = await response.json();
+
+    if (json.status !== "success" || !json.results) {
+      return reply("*Failed to fetch video. Please try again later.*");
+    }
+
+    let links = json.results;
+    let caption = `
+𝗧𝗜𝗞𝗧𝗢𝗞 𝗗𝗢𝗪𝗡𝗟𝗢𝗔𝗗𝗘𝗥 🎥
+1. ${links[0]?.quality || 'MP4'}
+2. ${links[1]?.quality || 'MP4 HD'}
+3. ${links[2]?.quality || 'MP3'}
+*Reply with 1, 2 or 3 to download*
+    `.trim();
+
+    const sentMsg = await conn.sendMessage(from, {
+      image: { url: "https://i.ibb.co/KxqWDtj/tiktok.jpg" }, // Static thumbnail
+      caption: caption
+    });
+
+    const msgID = sentMsg.key.id;
+
+    conn.ev.on("messages.upsert", async update => {
+      let msg = update.messages[0];
+      if (!msg.message) return;
+
+      const userInput = msg.message.conversation || msg.message.extendedTextMessage?.text;
+      const isReply = msg.message.extendedTextMessage &&
+        msg.message.extendedTextMessage.contextInfo?.stanzaId === msgID;
+
+      if (isReply) {
+        await conn.sendMessage(from, { react: { text: '⬇️', key: msg.key } });
+
+        if (userInput === '1') {
+          await conn.sendMessage(from, {
+            video: { url: links[0].link },
+            caption: "*Downloaded via SHABAN-MD*"
+          }, { quoted: msg });
+        } else if (userInput === '2') {
+          await conn.sendMessage(from, {
+            video: { url: links[1].link },
+            caption: "*Downloaded via SHABAN-MD (HD)*"
+          }, { quoted: msg });
+        } else if (userInput === '3') {
+          await conn.sendMessage(from, {
+            audio: { url: links[2].link },
+            mimetype: "audio/mpeg"
+          }, { quoted: msg });
+        } else {
+          reply("*Invalid input. Please reply with 1, 2, or 3.*");
+        }
+      }
+    });
+
+  } catch (e) {
+    console.log(e);
+    reply("An error occurred while processing your request.");
   }
 });
-
-} catch (error) { console.log(error); reply('An error occurred while processing your request.'); } });
-
 
 
 // Facebook-dl
