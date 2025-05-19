@@ -61,13 +61,19 @@ cmd({
     store.react("⬇️");
 
     let apiUrl = `https://api.cypherx.dpdns.org/tiktok?url=${encodeURIComponent(q)}`;
-    let res = await fetch(apiUrl);
-    let data = await res.json();
+    console.log("Fetching URL:", apiUrl);
 
-    console.log("API DATA:", data); // Debug line
+    let res = await fetch(apiUrl);
+    if (!res.ok) {
+      console.log("Response not OK:", res.status);
+      return reply("API server error: " + res.status);
+    }
+
+    let data = await res.json();
+    console.log("API RESPONSE:", JSON.stringify(data, null, 2));
 
     if (data.status !== "success" || !Array.isArray(data.results)) {
-      return reply("*API response invalid or failed.*");
+      return reply("*API returned invalid data.*");
     }
 
     let video = data.results.find(v => v.quality.includes("MP4 [1]"));
@@ -79,7 +85,7 @@ cmd({
     });
 
   } catch (err) {
-    console.error("ERROR:", err);
+    console.error("ERROR CAUGHT:", err);
     return reply("An error occurred while processing your request.");
   }
 });
