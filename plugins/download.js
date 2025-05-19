@@ -47,91 +47,40 @@ async (conn, mek, m, { from, args, q, reply }) => {
 
 /// tiktok============================
 
-cmd({ 
-  pattern: "tiktok", 
-  alias: ["tt"], 
-  react: "🎥", 
-  desc: "Download TikTok videos", 
-  category: "download", 
-  filename: __filename 
-}, async (conn, m, store, { from, quoted, q, reply }) => {
+cmd({
+  pattern: "tiktok",
+  alias: ["tt"],
+  react: "🎥",
+  desc: "Download TikTok videos",
+  category: "download",
+  filename: __filename
+}, async (conn, m, store, { from, q, reply }) => {
   try {
-    if (!q || !q.startsWith('https://')) {
-      return reply("Please provide a valid TikTok link.");
+    if (!q || !q.startsWith('http')) return reply("Please provide a valid TikTok link.");
+
+    store.react("⬇️");
+
+    let apiUrl = `https://api.cypherx.dpdns.org/tiktok?url=${encodeURIComponent(q)}`;
+    let res = await fetch(apiUrl);
+    let data = await res.json();
+
+    console.log("API DATA:", data); // Debug line
+
+    if (data.status !== "success" || !Array.isArray(data.results)) {
+      return reply("*API response invalid or failed.*");
     }
 
-    store.react('⬇️');
-    
-    const api = `https://api.cypherx.dpdns.org/tiktok?url=${encodeURIComponent(q)}`;
-    const response = await fetch(api);
-    const jsonData = await response.json();
+    let video = data.results.find(v => v.quality.includes("MP4 [1]"));
+    if (!video || !video.link) return reply("*No watermark video not found.*");
 
-    console.log("API DATA:", JSON.stringify(jsonData, null, 2)); // Debug
-
-    if (jsonData.status !== "success" || !Array.isArray(jsonData.results)) {
-      return reply("*API Error: Invalid response received.*");
-    }
-
-    const results = jsonData.results;
-    const noWatermark = results.find(v => v.quality.includes("MP4 [1]"))?.link;
-    const hdWatermark = results.find(v => v.quality.includes("MP4 HD"))?.link;
-    const audioOnly = results.find(v => v.quality.includes("MP3"))?.link;
-
-    if (!noWatermark && !hdWatermark && !audioOnly) {
-      return reply("*Download links not found.*");
-    }
-
-    const captionMessage = `
-𝗧𝗜𝗞𝗧𝗢𝗞 𝗗𝗢𝗪𝗡𝗟𝗢𝗔𝗗𝗘𝗥 🎥
-
-1️⃣ No Watermark  
-2️⃣ HD Watermark  
-3️⃣ Audio Only
-
-_Reply with 1, 2, or 3 to choose format._`;
-
-    const sentMessage = await conn.sendMessage(from, {
-      image: { url: "https://telegra.ph/file/efe7d8b47c63784179d69.jpg" },
-      caption: captionMessage
+    await conn.sendMessage(from, {
+      video: { url: video.link },
+      caption: "*Downloaded by SHABAN-MD*"
     });
 
-    const messageID = sentMessage.key.id;
-
-    conn.ev.on("messages.upsert", async message => {
-      const msg = message.messages[0];
-      if (!msg.message) return;
-
-      const userText = msg.message.conversation || msg.message.extendedTextMessage?.text;
-      const chatID = msg.key.remoteJid;
-      const isReply = msg.message.extendedTextMessage?.contextInfo?.stanzaId === messageID;
-
-      if (isReply) {
-        await conn.sendMessage(chatID, { react: { text: '⬇️', key: msg.key } });
-
-        if (userText === '1' && noWatermark) {
-          await conn.sendMessage(chatID, {
-            video: { url: noWatermark },
-            caption: "*Downloaded by SHABAN-MD*"
-          }, { quoted: msg });
-        } else if (userText === '2' && hdWatermark) {
-          await conn.sendMessage(chatID, {
-            video: { url: hdWatermark },
-            caption: "*Downloaded by SHABAN-MD*"
-          }, { quoted: msg });
-        } else if (userText === '3' && audioOnly) {
-          await conn.sendMessage(chatID, {
-            audio: { url: audioOnly },
-            mimetype: "audio/mpeg"
-          }, { quoted: msg });
-        } else {
-          reply("*Invalid option or file not found. Reply with 1, 2 or 3.*");
-        }
-      }
-    });
-
-  } catch (error) {
-    console.error("ERROR:", error);
-    reply("An error occurred while processing your request.");
+  } catch (err) {
+    console.error("ERROR:", err);
+    return reply("An error occurred while processing your request.");
   }
 });
 
