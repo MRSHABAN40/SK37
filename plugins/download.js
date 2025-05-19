@@ -5,7 +5,6 @@ const cheerio = require("cheerio");
 const { igdl } = require("ruhend-scraper");
 const axios = require("axios");
 const { cmd, commands } = require('../command');
-const fetch = require('node-fetch');
 
 cmd({
     pattern: "ig",
@@ -47,54 +46,83 @@ async (conn, mek, m, { from, args, q, reply }) => {
 
 /// tiktok============================
 
-cmd({
-  pattern: "tiktok",
-  alias: ["tt"],
-  react: "🎥",
-  desc: "Download TikTok videos",
-  category: "download",
-  filename: __filename
-}, async (conn, m, store, { from, q, reply }) => {
-  try {
-    if (!q || !q.startsWith('http')) return reply("Please provide a valid TikTok link.");
+cmd({ 
+    pattern: "tiktok", 
+    alias: ["tt"], 
+    react: "🎥", 
+    desc: "download tt videos", 
+    category: "download", 
+    filename: __filename }, async (conn, m, store, { from, quoted, q, reply }) => { try { if (!q || !q.startsWith('https://')) { return reply("Need a valid TikTok URL"); }
 
-    store.react("⬇️");
+store.react('⬇️');
 
-    let apiUrl = `https://api.cypherx.dpdns.org/tiktok?url=${encodeURIComponent(q)}`;
-    console.log("Fetching URL:", apiUrl);
+let response = await fetch(`https://bk9.fun/download/tiktok2?url=${encodeURIComponent(q)}`);
+let jsonData = await response.json();
 
-    let res = await fetch(apiUrl, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-        "Accept": "application/json"
-      }
-    });
+if (!jsonData.status) {
+  return reply("*Failed to fetch video. Please try again later.*");
+}
 
-    if (!res.ok) {
-      console.log("Response not OK:", res.status);
-      return reply("API server error: " + res.status);
+let tiktokData = jsonData.BK9;
+let captionMessage = `
+
+𝗧𝗜𝗞𝗧𝗢𝗞 𝗗𝗢𝗪𝗡𝗟𝗢𝗔𝗗𝗘𝗥 🎥
+┃▸Title: ${tiktokData.description || 'No title'} 
+┃▸Username:${tiktokData.username} 
+┃▸Plays:${tiktokData.played} 
+┃▸Comments:${tiktokData.commented} 
+┃▸Saves:${tiktokData.saved} 
+┃▸Shares:${tiktokData.shared}
+
+🎥 1. No Watermark 
+🎥 2. With Watermark 
+🎵 3. Audio Only `;
+
+const sentMessage = await conn.sendMessage(from, {
+  'image': { 'url': tiktokData.thumbnail },
+  'caption': captionMessage
+});
+
+const messageID = sentMessage.key.id;
+
+conn.ev.on("messages.upsert", async message => {
+  const receivedMessage = message.messages[0];
+  if (!receivedMessage.message) return;
+
+  const userResponse = receivedMessage.message.conversation || receivedMessage.message.extendedTextMessage?.text;
+  const chatID = receivedMessage.key.remoteJid;
+  const isReplyToBotMessage = receivedMessage.message.extendedTextMessage &&
+                              receivedMessage.message.extendedTextMessage.contextInfo.stanzaId === messageID;
+
+  if (isReplyToBotMessage) {
+    await conn.sendMessage(chatID, { 'react': { 'text': '⬇️', 'key': receivedMessage.key } });
+
+    let downloadLinks = tiktokData.video;
+
+    if (userResponse === '1') {
+      await conn.sendMessage(chatID, {
+        'video': { 'url': downloadLinks.noWatermark },
+        'caption': "*Downloaded SHABAN-MD*"
+      }, { 'quoted': receivedMessage });
+    } else if (userResponse === '2') {
+      await conn.sendMessage(chatID, {
+        'video': { 'url': downloadLinks.withWatermark },
+        'caption': "*Downloaded SHABAN-MD*"
+      }, { 'quoted': receivedMessage });
+    } else if (userResponse === '3') {
+      await conn.sendMessage(chatID, {
+        'audio': { 'url': tiktokData.audio },
+        'mimetype': "audio/mpeg"
+      }, { 'quoted': receivedMessage });
+    } else {
+      reply("*Invalid selection. Please reply with 1, 2, or 3.*");
     }
-
-    let data = await res.json();
-    console.log("API RESPONSE:", JSON.stringify(data, null, 2));
-
-    if (data.status !== "success" || !Array.isArray(data.results)) {
-      return reply("*API returned invalid data.*");
-    }
-
-    let video = data.results.find(v => v.quality.includes("MP4 [1]"));
-    if (!video || !video.link) return reply("*No watermark video not found.*");
-
-    await conn.sendMessage(from, {
-      video: { url: video.link },
-      caption: "*Downloaded by SHABAN-MD*"
-    });
-
-  } catch (err) {
-    console.error("ERROR CAUGHT:", err);
-    return reply("An error occurred while processing your request.");
   }
 });
+
+} catch (error) { console.log(error); reply('An error occurred while processing your request.'); } });
+
+
 
 // Facebook-dl =====================
 
