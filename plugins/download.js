@@ -51,37 +51,44 @@ cmd({
   pattern: "tiktok", 
   alias: ["tt"], 
   react: "🎥", 
-  desc: "download tt videos", 
+  desc: "Download TikTok videos", 
   category: "download", 
   filename: __filename 
 }, async (conn, m, store, { from, quoted, q, reply }) => {
   try {
     if (!q || !q.startsWith('https://')) {
-      return reply("Need a valid TikTok URL");
+      return reply("Please provide a valid TikTok link.");
     }
 
     store.react('⬇️');
+    
+    const api = `https://api.cypherx.dpdns.org/tiktok?url=${encodeURIComponent(q)}`;
+    const response = await fetch(api);
+    const jsonData = await response.json();
 
-    let response = await fetch(`https://api.cypherx.dpdns.org/tiktok?url=${encodeURIComponent(q)}`);
-    let jsonData = await response.json();
+    console.log("API DATA:", JSON.stringify(jsonData, null, 2)); // Debug
 
-    if (jsonData.status !== "success") {
-      return reply("*Failed to fetch video. Please try again later.*");
+    if (jsonData.status !== "success" || !Array.isArray(jsonData.results)) {
+      return reply("*API Error: Invalid response received.*");
     }
 
-    let results = jsonData.results;
-    let noWatermark = results.find(v => v.quality.includes("MP4 [1]"))?.link;
-    let hdWatermark = results.find(v => v.quality.includes("MP4 HD"))?.link;
-    let audioOnly = results.find(v => v.quality.includes("MP3"))?.link;
+    const results = jsonData.results;
+    const noWatermark = results.find(v => v.quality.includes("MP4 [1]"))?.link;
+    const hdWatermark = results.find(v => v.quality.includes("MP4 HD"))?.link;
+    const audioOnly = results.find(v => v.quality.includes("MP3"))?.link;
 
-    let captionMessage = `
+    if (!noWatermark && !hdWatermark && !audioOnly) {
+      return reply("*Download links not found.*");
+    }
+
+    const captionMessage = `
 𝗧𝗜𝗞𝗧𝗢𝗞 𝗗𝗢𝗪𝗡𝗟𝗢𝗔𝗗𝗘𝗥 🎥
 
-🎥 1. No Watermark 
-🎥 2. HD Watermark 
-🎵 3. Audio Only 
+1️⃣ No Watermark  
+2️⃣ HD Watermark  
+3️⃣ Audio Only
 
-_Reply with 1, 2, or 3 to download your preferred format._`;
+_Reply with 1, 2, or 3 to choose format._`;
 
     const sentMessage = await conn.sendMessage(from, {
       image: { url: "https://telegra.ph/file/efe7d8b47c63784179d69.jpg" },
@@ -91,45 +98,42 @@ _Reply with 1, 2, or 3 to download your preferred format._`;
     const messageID = sentMessage.key.id;
 
     conn.ev.on("messages.upsert", async message => {
-      const receivedMessage = message.messages[0];
-      if (!receivedMessage.message) return;
+      const msg = message.messages[0];
+      if (!msg.message) return;
 
-      const userResponse = receivedMessage.message.conversation || receivedMessage.message.extendedTextMessage?.text;
-      const chatID = receivedMessage.key.remoteJid;
-      const isReplyToBotMessage = receivedMessage.message.extendedTextMessage &&
-        receivedMessage.message.extendedTextMessage.contextInfo?.stanzaId === messageID;
+      const userText = msg.message.conversation || msg.message.extendedTextMessage?.text;
+      const chatID = msg.key.remoteJid;
+      const isReply = msg.message.extendedTextMessage?.contextInfo?.stanzaId === messageID;
 
-      if (isReplyToBotMessage) {
-        await conn.sendMessage(chatID, { react: { text: '⬇️', key: receivedMessage.key } });
+      if (isReply) {
+        await conn.sendMessage(chatID, { react: { text: '⬇️', key: msg.key } });
 
-        if (userResponse === '1' && noWatermark) {
+        if (userText === '1' && noWatermark) {
           await conn.sendMessage(chatID, {
             video: { url: noWatermark },
-            caption: "*Downloaded SHABAN-MD*"
-          }, { quoted: receivedMessage });
-        } else if (userResponse === '2' && hdWatermark) {
+            caption: "*Downloaded by SHABAN-MD*"
+          }, { quoted: msg });
+        } else if (userText === '2' && hdWatermark) {
           await conn.sendMessage(chatID, {
             video: { url: hdWatermark },
-            caption: "*Downloaded SHABAN-MD*"
-          }, { quoted: receivedMessage });
-        } else if (userResponse === '3' && audioOnly) {
+            caption: "*Downloaded by SHABAN-MD*"
+          }, { quoted: msg });
+        } else if (userText === '3' && audioOnly) {
           await conn.sendMessage(chatID, {
             audio: { url: audioOnly },
             mimetype: "audio/mpeg"
-          }, { quoted: receivedMessage });
+          }, { quoted: msg });
         } else {
-          reply("*Invalid selection or media not found. Please reply with 1, 2, or 3.*");
+          reply("*Invalid option or file not found. Reply with 1, 2 or 3.*");
         }
       }
     });
 
   } catch (error) {
-    console.log(error);
-    reply('An error occurred while processing your request.');
+    console.error("ERROR:", error);
+    reply("An error occurred while processing your request.");
   }
 });
-
-
 
 // Facebook-dl =====================
 
