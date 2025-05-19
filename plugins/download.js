@@ -5,6 +5,7 @@ const cheerio = require("cheerio");
 const { igdl } = require("ruhend-scraper");
 const axios = require("axios");
 const { cmd, commands } = require('../command');
+const fetch = require('node-fetch');
 
 cmd({
     pattern: "ig",
