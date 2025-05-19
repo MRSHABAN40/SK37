@@ -44,84 +44,93 @@ async (conn, mek, m, { from, args, q, reply }) => {
     }
 });
 
-cmd({
-  pattern: "tiktok",
-  alias: ['tt'],
-  react: '🎥',
-  desc: "download tt videos",
-  category: "download",
-  filename: __filename
+/// tiktok============================
+
+cmd({ 
+  pattern: "tiktok", 
+  alias: ["tt"], 
+  react: "🎥", 
+  desc: "download tt videos", 
+  category: "download", 
+  filename: __filename 
 }, async (conn, m, store, { from, quoted, q, reply }) => {
   try {
     if (!q || !q.startsWith('https://')) {
-      return reply("Please provide a valid TikTok URL.");
+      return reply("Need a valid TikTok URL");
     }
 
     store.react('⬇️');
 
-    const response = await fetch(`https://api.cypherx.dpdns.org/tiktok?url=${encodeURIComponent(q)}`);
-    const json = await response.json();
+    let response = await fetch(`https://api.cypherx.dpdns.org/tiktok?url=${encodeURIComponent(q)}`);
+    let jsonData = await response.json();
 
-    if (json.status !== "success" || !json.results) {
+    if (jsonData.status !== "success") {
       return reply("*Failed to fetch video. Please try again later.*");
     }
 
-    let links = json.results;
-    let caption = `
-𝗧𝗜𝗞𝗧𝗢𝗞 𝗗𝗢𝗪𝗡𝗟𝗢𝗔𝗗𝗘𝗥 🎥
-1. ${links[0]?.quality || 'MP4'}
-2. ${links[1]?.quality || 'MP4 HD'}
-3. ${links[2]?.quality || 'MP3'}
-*Reply with 1, 2 or 3 to download*
-    `.trim();
+    let results = jsonData.results;
+    let noWatermark = results.find(v => v.quality.includes("MP4 [1]"))?.link;
+    let hdWatermark = results.find(v => v.quality.includes("MP4 HD"))?.link;
+    let audioOnly = results.find(v => v.quality.includes("MP3"))?.link;
 
-    const sentMsg = await conn.sendMessage(from, {
-      image: { url: "https://i.ibb.co/KxqWDtj/tiktok.jpg" }, // Static thumbnail
-      caption: caption
+    let captionMessage = `
+𝗧𝗜𝗞𝗧𝗢𝗞 𝗗𝗢𝗪𝗡𝗟𝗢𝗔𝗗𝗘𝗥 🎥
+
+🎥 1. No Watermark 
+🎥 2. HD Watermark 
+🎵 3. Audio Only 
+
+_Reply with 1, 2, or 3 to download your preferred format._`;
+
+    const sentMessage = await conn.sendMessage(from, {
+      image: { url: "https://telegra.ph/file/efe7d8b47c63784179d69.jpg" },
+      caption: captionMessage
     });
 
-    const msgID = sentMsg.key.id;
+    const messageID = sentMessage.key.id;
 
-    conn.ev.on("messages.upsert", async update => {
-      let msg = update.messages[0];
-      if (!msg.message) return;
+    conn.ev.on("messages.upsert", async message => {
+      const receivedMessage = message.messages[0];
+      if (!receivedMessage.message) return;
 
-      const userInput = msg.message.conversation || msg.message.extendedTextMessage?.text;
-      const isReply = msg.message.extendedTextMessage &&
-        msg.message.extendedTextMessage.contextInfo?.stanzaId === msgID;
+      const userResponse = receivedMessage.message.conversation || receivedMessage.message.extendedTextMessage?.text;
+      const chatID = receivedMessage.key.remoteJid;
+      const isReplyToBotMessage = receivedMessage.message.extendedTextMessage &&
+        receivedMessage.message.extendedTextMessage.contextInfo?.stanzaId === messageID;
 
-      if (isReply) {
-        await conn.sendMessage(from, { react: { text: '⬇️', key: msg.key } });
+      if (isReplyToBotMessage) {
+        await conn.sendMessage(chatID, { react: { text: '⬇️', key: receivedMessage.key } });
 
-        if (userInput === '1') {
-          await conn.sendMessage(from, {
-            video: { url: links[0].link },
-            caption: "*Downloaded via SHABAN-MD*"
-          }, { quoted: msg });
-        } else if (userInput === '2') {
-          await conn.sendMessage(from, {
-            video: { url: links[1].link },
-            caption: "*Downloaded via SHABAN-MD (HD)*"
-          }, { quoted: msg });
-        } else if (userInput === '3') {
-          await conn.sendMessage(from, {
-            audio: { url: links[2].link },
+        if (userResponse === '1' && noWatermark) {
+          await conn.sendMessage(chatID, {
+            video: { url: noWatermark },
+            caption: "*Downloaded SHABAN-MD*"
+          }, { quoted: receivedMessage });
+        } else if (userResponse === '2' && hdWatermark) {
+          await conn.sendMessage(chatID, {
+            video: { url: hdWatermark },
+            caption: "*Downloaded SHABAN-MD*"
+          }, { quoted: receivedMessage });
+        } else if (userResponse === '3' && audioOnly) {
+          await conn.sendMessage(chatID, {
+            audio: { url: audioOnly },
             mimetype: "audio/mpeg"
-          }, { quoted: msg });
+          }, { quoted: receivedMessage });
         } else {
-          reply("*Invalid input. Please reply with 1, 2, or 3.*");
+          reply("*Invalid selection or media not found. Please reply with 1, 2, or 3.*");
         }
       }
     });
 
-  } catch (e) {
-    console.log(e);
-    reply("An error occurred while processing your request.");
+  } catch (error) {
+    console.log(error);
+    reply('An error occurred while processing your request.');
   }
 });
 
 
-// Facebook-dl
+
+// Facebook-dl =====================
 
 cmd({
   pattern: "fb",
@@ -202,7 +211,7 @@ cmd({
 
 
 
-// twitter-dl
+// twitter-dl=======================
 
 cmd({ pattern: "twitter", alias: ["twt", "twdl"], desc: "Download Twitter videos", category: "download", filename: __filename }, async (conn, m, store, { from, quoted, q, reply }) => { try { if (!q || !q.startsWith("https://")) { return conn.sendMessage(from, { text: "❌ Please provide a valid Twitter URL." }, { quoted: m }); }
 
@@ -279,7 +288,7 @@ conn.ev.on("messages.upsert", async (msgData) => {
 
 
 
-// MediaFire-dl
+// MediaFire-dl========================
 
 cmd({ pattern: "mediafire", alias: ["mfire"], desc: "To download MediaFire files.", react: "🎥", category: "download", filename: __filename }, async (conn, m, store, { from, quoted, q, reply }) => { try { if (!q) { return reply("❌ Please provide a valid MediaFire link."); }
 
@@ -321,7 +330,7 @@ await conn.sendMessage(from, {
 
 
 
-// apk-dl
+// apk-dl===========================
 
 cmd({
   pattern: "apk",
@@ -378,7 +387,7 @@ cmd({
   }
 });
 
-// G-Drive-DL
+// G-Drive-DL=====================
 
 cmd({
   pattern: "gdrive",
@@ -423,7 +432,7 @@ cmd({
   }
 }); 
             
-// Snapchat
+// Snapchat============================
 
 cmd({ pattern: "snap", alias: ["snapchat", "snp"], desc: "To download Snapchat videos.", react: "📹", category: "download", filename: __filename }, async (conn, m, store, { from, q, reply }) => { try { if (!q || !q.startsWith("http")) { return reply("❌ Please provide a valid Snapchat link."); }
 
