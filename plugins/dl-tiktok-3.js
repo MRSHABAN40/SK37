@@ -3,83 +3,41 @@ const axios = require('axios');
 
 cmd({
   pattern: "tiktok3",
-  alias: ['tt3'],
-  react: '🎥',
-  desc: "Download TikTok videos",
-  category: "download",
+  alias: ["ttdl3", "tt3", "tiktokdl"],
+  desc: "Download TikTok video or audio from new API",
+  category: "downloader",
+  react: "🎵",
   filename: __filename
-}, async (conn, m, store, { from, q, reply }) => {
+},
+async (conn, mek, m, { from, args, q, reply }) => {
   try {
-    if (!q || !q.startsWith("http")) return reply("Please provide a valid TikTok URL.");
+    if (!q) return reply("Please provide a TikTok video URL.");
+    if (!q.includes("tiktok.com")) return reply("Invalid TikTok URL.");
 
-    store.react('⬇️');
+    // React to show processing
+    await conn.sendMessage(from, { react: { text: "🎵", key: mek.key } });
 
-    const res = await fetch(`https://api.cypherx.dpdns.org/tiktok?url=${encodeURIComponent(q)}`);
-    const text = await res.text();
+    // Use the new API endpoint
+    const apiUrl = `https://api.cypherx.dpdns.org/tiktok?url=${encodeURIComponent(q)}`;
+    const { data } = await axios.get(apiUrl);
 
-    let json;
-    try {
-      json = JSON.parse(text);
-    } catch (err) {
-      console.log("Invalid JSON from API:\n", text);
-      return reply("API returned invalid response.");
+    if (data.status !== "success" || !Array.isArray(data.results)) {
+      return reply("Failed to fetch TikTok video/audio.");
     }
 
-    if (json.status !== "success" || !json.results || !Array.isArray(json.results)) {
-      console.log("Invalid API format:\n", json);
-      return reply("Failed to parse download links from TikTok.");
-    }
-
-    let results = json.results;
-    let video1 = results.find(v => v.quality.includes("MP4 [1]"))?.link;
-    let video2 = results.find(v => v.quality.includes("MP4 HD"))?.link;
-    let audio = results.find(v => v.quality.includes("MP3"))?.link;
-
-    let caption = `*𝗧𝗜𝗞𝗧𝗢𝗞 𝗗𝗢𝗪𝗡𝗟𝗢𝗔𝗗𝗘𝗥 🎥*\n
-1. MP4 Normal\n2. MP4 HD\n3. Audio (MP3)\n\nReply with 1, 2 or 3`;
-
-    const sentMsg = await conn.sendMessage(from, {
-      text: caption
-    }, { quoted: m });
-
-    const msgID = sentMsg.key.id;
-
-    conn.ev.on('messages.upsert', async msg => {
-      try {
-        const incoming = msg.messages?.[0];
-        if (!incoming?.message) return;
-
-        const userText = incoming.message?.conversation || incoming.message?.extendedTextMessage?.text;
-        const isReply = incoming.message?.extendedTextMessage?.contextInfo?.stanzaId === msgID;
-        const chat = incoming.key.remoteJid;
-
-        if (isReply) {
-          if (userText === '1' && video1) {
-            await conn.sendMessage(chat, {
-              video: { url: video1 },
-              caption: "*Downloaded by SHABAN-MD*"
-            }, { quoted: incoming });
-          } else if (userText === '2' && video2) {
-            await conn.sendMessage(chat, {
-              video: { url: video2 },
-              caption: "*Downloaded by SHABAN-MD*"
-            }, { quoted: incoming });
-          } else if (userText === '3' && audio) {
-            await conn.sendMessage(chat, {
-              audio: { url: audio },
-              mimetype: "audio/mpeg"
-            }, { quoted: incoming });
-          } else {
-            conn.sendMessage(chat, { text: "Invalid option. Reply with 1, 2, or 3." }, { quoted: incoming });
-          }
-        }
-      } catch (err) {
-        console.log("Error in reply handler:", err);
-      }
+    // Prepare message with all available download options
+    let caption = `🎵 *TikTok Download Links* 🎵\n\n`;
+    data.results.forEach((item, i) => {
+      // Skip invalid or promo links
+      if (!item.link || item.link === "https://savetikpro.com") return;
+      caption += `${i + 1}. ${item.quality}\n${item.link}\n\n`;
     });
 
-  } catch (e) {
-    console.log("TikTok Command Error:", e);
-    reply("Something went wrong. Check logs.");
+    // Send message with all download links
+    await conn.sendMessage(from, { text: caption }, { quoted: mek });
+
+  } catch (error) {
+    console.error("Error in TikTok downloader command:", error);
+    reply("An error occurred while processing your request.");
   }
 });
