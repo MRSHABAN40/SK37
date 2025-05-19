@@ -63,7 +63,13 @@ cmd({
     let apiUrl = `https://api.cypherx.dpdns.org/tiktok?url=${encodeURIComponent(q)}`;
     console.log("Fetching URL:", apiUrl);
 
-    let res = await fetch(apiUrl);
+    let res = await fetch(apiUrl, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+        "Accept": "application/json"
+      }
+    });
+
     if (!res.ok) {
       console.log("Response not OK:", res.status);
       return reply("API server error: " + res.status);
