@@ -145,7 +145,7 @@ const port = process.env.PORT || 9090;
   conn.ev.on('creds.update', saveCreds)
   
 // === AI Global Chatbot Handler ===
-const activatedUsers = new Set(); // To track users who have sent "chatbot on"
+const activatedUsers = new Set();
 
 conn.ev.on('messages.upsert', async (msg) => {
     try {
@@ -154,18 +154,14 @@ conn.ev.on('messages.upsert', async (msg) => {
 
         const text = m.message?.conversation || m.message?.extendedTextMessage?.text;
         const from = m.key.remoteJid;
-
         if (!text) return;
 
         const lowerText = text.trim().toLowerCase();
+        const senderNumber = from.split('@')[0];
 
-        // Normalize bot number
-        const botNumber = conn.user.id.split(/[:@]/)[0]; // Extract only number part
-        const senderNumber = from.split('@')[0]; // Extract number from sender
+        const isBotItself = senderNumber === global.botNumber;
 
-        const isBotItself = senderNumber === botNumber;
-
-        // Handle "chatbot on" (only bot's own number can activate)
+        // chatbot on
         if (!activatedUsers.has(from)) {
             if (lowerText === "chatbot on") {
                 if (!isBotItself) {
@@ -179,7 +175,7 @@ conn.ev.on('messages.upsert', async (msg) => {
             }
         }
 
-        // Handle "chatbot off"
+        // chatbot off
         if (lowerText === "chatbot off") {
             if (!isBotItself) {
                 await conn.sendMessage(from, { text: "Sirf usi WhatsApp number se chatbot off ho sakta hai jahan bot chal raha hai.", quoted: m });
@@ -190,7 +186,7 @@ conn.ev.on('messages.upsert', async (msg) => {
             return;
         }
 
-        // Continue AI Chat
+        // chatbot response
         await conn.sendMessage(from, { react: { text: '🤖', key: m.key } });
 
         const apiUrl = `https://apis-keith.vercel.app/ai/gpt?q=${encodeURIComponent(text)}`;
@@ -207,9 +203,8 @@ conn.ev.on('messages.upsert', async (msg) => {
                 quoted: m
             });
         }
-
     } catch (err) {
-        console.error("Global AI Chatbot Error:", err);
+        console.error("Chatbot Error:", err);
     }
 });
   
