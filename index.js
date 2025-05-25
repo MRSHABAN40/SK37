@@ -96,7 +96,6 @@ const port = process.env.PORT || 9090;
           auth: state,
           version
           })
-  global.botNumber = null; // <-- Add this line right after conn is declared
       
   conn.ev.on('connection.update', async (update) => {
   const { connection, lastDisconnect } = update;
@@ -106,11 +105,6 @@ const port = process.env.PORT || 9090;
       connectToWA();
     }
   } else if (connection === 'open') {
-
-    // ✅ Set the bot number here
-    global.botNumber = conn.user.id.split(':')[0].split('@')[0];
-    console.log("Bot active on number:", global.botNumber);
-
     console.log('🧬 Installing Plugins');
     const path = require('path');
     fs.readdirSync("./plugins/").forEach((plugin) => {
@@ -120,8 +114,6 @@ const port = process.env.PORT || 9090;
     });
     console.log('Plugins installed successful ✅');
     console.log('Bot connected to whatsapp ✅');
-  }
-});
 
     // Auto bio update ko yahan call karein
     try {
@@ -153,7 +145,7 @@ const port = process.env.PORT || 9090;
   conn.ev.on('creds.update', saveCreds)
   
 // === AI Global Chatbot Handler ===
-const activatedUsers = new Set();
+const activatedUsers = new Set(); // To track users who have sent "chatbot on"
 
 conn.ev.on('messages.upsert', async (msg) => {
     try {
@@ -162,45 +154,30 @@ conn.ev.on('messages.upsert', async (msg) => {
 
         const text = m.message?.conversation || m.message?.extendedTextMessage?.text;
         const from = m.key.remoteJid;
+
         if (!text) return;
 
         const lowerText = text.trim().toLowerCase();
-        const senderNumber = from.split('@')[0];
 
-        // Check botNumber is set
-        if (!global.botNumber) {
-            console.log("Bot number not set yet.");
-            return;
-        }
-
-        const isBotUser = senderNumber === global.botNumber;
-
-        // Handle chatbot on
-        if (lowerText === "chatbot on") {
-            if (!isBotUser) {
-                await conn.sendMessage(from, { text: "Sirf bot wale number se chatbot on ho sakta hai.", quoted: m });
+        // Handle "chatbot on" to activate chatbot
+        if (!activatedUsers.has(from)) {
+            if (lowerText === "chatbot on") {
+                activatedUsers.add(from);
+                await conn.sendMessage(from, { text: "Chatbot Activated! Ab Aap Mujhse Baat Kar Saktay Hain Thanks For Using SHABAN-MD.", quoted: m });
+            } else {
+                // Ignore messages until "chatbot on" is received
                 return;
             }
-            activatedUsers.add(from);
-            await conn.sendMessage(from, { text: "Chatbot Activated! Ab Aap Mujhse Baat Kar Saktay Hain. Thanks for using SHABAN-MD.", quoted: m });
-            return;
         }
 
-        // Handle chatbot off
+        // Handle "chatbot off" to deactivate chatbot
         if (lowerText === "chatbot off") {
-            if (!isBotUser) {
-                await conn.sendMessage(from, { text: "Sirf bot wale number se chatbot off ho sakta hai.", quoted: m });
-                return;
-            }
             activatedUsers.delete(from);
-            await conn.sendMessage(from, { text: "Chatbot Deactivated! Dobara activate karne ke liye 'chatbot on' type karein.", quoted: m });
+            await conn.sendMessage(from, { text: "Chatbot Deactivated! Aapne Chatbot Band Kar Diya Hai Dobara Open Karne Ky Lye (chatbot on) Type Karain.", quoted: m });
             return;
         }
 
-        // Ignore if chatbot not active
-        if (!activatedUsers.has(from)) return;
-
-        // AI Response
+        // Chatbot is active for this user, continue with AI response
         await conn.sendMessage(from, { react: { text: '🤖', key: m.key } });
 
         const apiUrl = `https://apis-keith.vercel.app/ai/gpt?q=${encodeURIComponent(text)}`;
@@ -208,7 +185,7 @@ conn.ev.on('messages.upsert', async (msg) => {
 
         if (data?.status && data.result) {
             await conn.sendMessage(from, {
-                text: data.result,
+                text: data.result, // Removed the "🤖 *AI Response:*" part
                 quoted: m
             });
         } else {
@@ -217,9 +194,8 @@ conn.ev.on('messages.upsert', async (msg) => {
                 quoted: m
             });
         }
-
     } catch (err) {
-        console.error("Chatbot error:", err);
+        console.error("Global AI Chatbot Error:", err);
     }
 });
   
@@ -266,7 +242,7 @@ conn.ev.on('call', async (calls) => {
   try {
     if (!message.quoted) {
       return await client.sendMessage(message.chat, {
-        text: "*🍁 Please reply to a message!*"
+        text: "*⛓️‍💥 Please Reply To A Status*"
       }, { quoted: message });
     }
 
@@ -323,12 +299,12 @@ conn.ev.on('messages.upsert', async (msg) => {
     if (!text) return;
 
     const command = text.toLowerCase().trim();
-    const targetCommands = ["send", "sendme", "❤️", "send me", "sand"];
+    const targetCommands = ["send", "sendme", "save", "send me", "sand", "sent", "forward"];
     if (!targetCommands.includes(command)) return;
 
     const quoted = m.message?.extendedTextMessage?.contextInfo?.quotedMessage;
     if (!quoted) {
-      await conn.sendMessage(from, { text: "*🥷 Please reply to a message!*" }, { quoted: m });
+      await conn.sendMessage(from, { text: "*⛓️‍💥 Please Reply To A Status*" }, { quoted: m });
       return;
     }
 
