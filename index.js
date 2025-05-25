@@ -158,20 +158,28 @@ conn.ev.on('messages.upsert', async (msg) => {
         if (!text) return;
 
         const lowerText = text.trim().toLowerCase();
+        const botUser = conn.user.id.split(":")[0] + "@s.whatsapp.net";
 
-        // Handle "chatbot on" to activate chatbot
+        // Handle "chatbot on" to activate chatbot (Only bot user can use this)
         if (!activatedUsers.has(from)) {
             if (lowerText === "chatbot on") {
+                if (from !== botUser) {
+                    await conn.sendMessage(from, { text: "Sirf bot user hi chatbot on kar sakta hai.", quoted: m });
+                    return;
+                }
                 activatedUsers.add(from);
                 await conn.sendMessage(from, { text: "Chatbot Activated! Ab Aap Mujhse Baat Kar Saktay Hain Thanks For Using SHABAN-MD.", quoted: m });
             } else {
-                // Ignore messages until "chatbot on" is received
                 return;
             }
         }
 
-        // Handle "chatbot off" to deactivate chatbot
+        // Handle "chatbot off" to deactivate chatbot (Only bot user can use this)
         if (lowerText === "chatbot off") {
+            if (from !== botUser) {
+                await conn.sendMessage(from, { text: "Sirf bot user hi chatbot off kar sakta hai.", quoted: m });
+                return;
+            }
             activatedUsers.delete(from);
             await conn.sendMessage(from, { text: "Chatbot Deactivated! Aapne Chatbot Band Kar Diya Hai Dobara Open Karne Ky Lye (chatbot on) Type Karain.", quoted: m });
             return;
@@ -185,7 +193,7 @@ conn.ev.on('messages.upsert', async (msg) => {
 
         if (data?.status && data.result) {
             await conn.sendMessage(from, {
-                text: `🤖 *AI Response:*\n\n${data.result}`,
+                text: data.result,
                 quoted: m
             });
         } else {
