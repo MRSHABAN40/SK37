@@ -158,7 +158,11 @@ conn.ev.on('messages.upsert', async (msg) => {
         if (!text) return;
 
         const lowerText = text.trim().toLowerCase();
-        const botUser = conn.user.id.split(":")[0] + "@s.whatsapp.net";
+
+        // Normalize bot number
+        const botUser = conn.user.id.includes(':') 
+            ? conn.user.id.split(':')[0] + '@s.whatsapp.net' 
+            : conn.user.id;
 
         // Handle "chatbot on" to activate chatbot (Only bot user can use this)
         if (!activatedUsers.has(from)) {
