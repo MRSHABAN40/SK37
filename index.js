@@ -145,7 +145,7 @@ const port = process.env.PORT || 9090;
   conn.ev.on('creds.update', saveCreds)
   
 // === AI Global Chatbot Handler ===
-const activatedUsers = new Set(); // To track users who have sent "hello"
+const activatedUsers = new Set(); // To track users who have sent "chatbot on"
 
 conn.ev.on('messages.upsert', async (msg) => {
     try {
@@ -157,9 +157,6 @@ conn.ev.on('messages.upsert', async (msg) => {
 
         if (!text) return;
 
-        // Optional: skip group messages if needed
-        // if (from.endsWith('@g.us')) return;
-
         const lowerText = text.trim().toLowerCase();
 
         // Handle "chatbot on" to activate chatbot
@@ -168,7 +165,7 @@ conn.ev.on('messages.upsert', async (msg) => {
                 activatedUsers.add(from);
                 await conn.sendMessage(from, { text: "Chatbot Activated! Ab Aap Mujhse Baat Kar Saktay Hain Thanks For Using SHABAN-MD.", quoted: m });
             } else {
-                // Ignore messages until "hello" is received
+                // Ignore messages until "chatbot on" is received
                 return;
             }
         }
@@ -183,12 +180,12 @@ conn.ev.on('messages.upsert', async (msg) => {
         // Chatbot is active for this user, continue with AI response
         await conn.sendMessage(from, { react: { text: '🤖', key: m.key } });
 
-        const apiUrl = `https://bk9.fun/ai/jeeves-chat?q=${encodeURIComponent(text)}`;
+        const apiUrl = `https://apis-keith.vercel.app/ai/gpt?q=${encodeURIComponent(text)}`;
         const { data } = await axios.get(apiUrl);
 
-        if (data?.status && data.BK9) {
+        if (data?.status && data.result) {
             await conn.sendMessage(from, {
-                text: `🤖 *AI Response:*\n\n${data.BK9}`,
+                text: `🤖 *AI Response:*\n\n${data.result}`,
                 quoted: m
             });
         } else {
