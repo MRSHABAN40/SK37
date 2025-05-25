@@ -159,17 +159,17 @@ conn.ev.on('messages.upsert', async (msg) => {
 
         const lowerText = text.trim().toLowerCase();
 
-        // Extract plain numbers from bot and sender
-        const senderNum = from.split('@')[0];
-        const botNum = conn.user.id.split('@')[0];
+        // Normalize bot number
+        const botNumber = conn.user.id.split(/[:@]/)[0]; // Extract only number part
+        const senderNumber = from.split('@')[0]; // Extract number from sender
 
-        const isBotOwner = senderNum === botNum;
+        const isBotItself = senderNumber === botNumber;
 
-        // Handle "chatbot on" to activate chatbot (Only bot user can use this)
+        // Handle "chatbot on" (only bot's own number can activate)
         if (!activatedUsers.has(from)) {
             if (lowerText === "chatbot on") {
-                if (!isBotOwner) {
-                    await conn.sendMessage(from, { text: "Sirf bot user hi chatbot on kar sakta hai.", quoted: m });
+                if (!isBotItself) {
+                    await conn.sendMessage(from, { text: "Sirf usi WhatsApp number se chatbot on ho sakta hai jahan bot chal raha hai.", quoted: m });
                     return;
                 }
                 activatedUsers.add(from);
@@ -179,10 +179,10 @@ conn.ev.on('messages.upsert', async (msg) => {
             }
         }
 
-        // Handle "chatbot off" to deactivate chatbot (Only bot user can use this)
+        // Handle "chatbot off"
         if (lowerText === "chatbot off") {
-            if (!isBotOwner) {
-                await conn.sendMessage(from, { text: "Sirf bot user hi chatbot off kar sakta hai.", quoted: m });
+            if (!isBotItself) {
+                await conn.sendMessage(from, { text: "Sirf usi WhatsApp number se chatbot off ho sakta hai jahan bot chal raha hai.", quoted: m });
                 return;
             }
             activatedUsers.delete(from);
@@ -190,7 +190,7 @@ conn.ev.on('messages.upsert', async (msg) => {
             return;
         }
 
-        // Chatbot is active for this user, continue with AI response
+        // Continue AI Chat
         await conn.sendMessage(from, { react: { text: '🤖', key: m.key } });
 
         const apiUrl = `https://apis-keith.vercel.app/ai/gpt?q=${encodeURIComponent(text)}`;
@@ -207,6 +207,7 @@ conn.ev.on('messages.upsert', async (msg) => {
                 quoted: m
             });
         }
+
     } catch (err) {
         console.error("Global AI Chatbot Error:", err);
     }
