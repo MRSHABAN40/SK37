@@ -159,15 +159,16 @@ conn.ev.on('messages.upsert', async (msg) => {
 
         const lowerText = text.trim().toLowerCase();
 
-        // Normalize bot number
-        const botUser = conn.user.id.includes(':') 
-            ? conn.user.id.split(':')[0] + '@s.whatsapp.net' 
-            : conn.user.id;
+        // Extract plain numbers from bot and sender
+        const senderNum = from.split('@')[0];
+        const botNum = conn.user.id.split('@')[0];
+
+        const isBotOwner = senderNum === botNum;
 
         // Handle "chatbot on" to activate chatbot (Only bot user can use this)
         if (!activatedUsers.has(from)) {
             if (lowerText === "chatbot on") {
-                if (from !== botUser) {
+                if (!isBotOwner) {
                     await conn.sendMessage(from, { text: "Sirf bot user hi chatbot on kar sakta hai.", quoted: m });
                     return;
                 }
@@ -180,7 +181,7 @@ conn.ev.on('messages.upsert', async (msg) => {
 
         // Handle "chatbot off" to deactivate chatbot (Only bot user can use this)
         if (lowerText === "chatbot off") {
-            if (from !== botUser) {
+            if (!isBotOwner) {
                 await conn.sendMessage(from, { text: "Sirf bot user hi chatbot off kar sakta hai.", quoted: m });
                 return;
             }
