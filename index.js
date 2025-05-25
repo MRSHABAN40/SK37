@@ -96,6 +96,7 @@ const port = process.env.PORT || 9090;
           auth: state,
           version
           })
+  global.botNumber = null; // <-- Add this line right after conn is declared
       
   conn.ev.on('connection.update', async (update) => {
   const { connection, lastDisconnect } = update;
@@ -105,6 +106,11 @@ const port = process.env.PORT || 9090;
       connectToWA();
     }
   } else if (connection === 'open') {
+
+    // ✅ Set the bot number here
+    global.botNumber = conn.user.id.split(':')[0].split('@')[0];
+    console.log("Bot active on number:", global.botNumber);
+
     console.log('🧬 Installing Plugins');
     const path = require('path');
     fs.readdirSync("./plugins/").forEach((plugin) => {
@@ -114,6 +120,8 @@ const port = process.env.PORT || 9090;
     });
     console.log('Plugins installed successful ✅');
     console.log('Bot connected to whatsapp ✅');
+  }
+});
 
     // Auto bio update ko yahan call karein
     try {
@@ -159,34 +167,40 @@ conn.ev.on('messages.upsert', async (msg) => {
         const lowerText = text.trim().toLowerCase();
         const senderNumber = from.split('@')[0];
 
-        const isBotItself = senderNumber === global.botNumber;
-
-        // chatbot on
-        if (!activatedUsers.has(from)) {
-            if (lowerText === "chatbot on") {
-                if (!isBotItself) {
-                    await conn.sendMessage(from, { text: "Sirf usi WhatsApp number se chatbot on ho sakta hai jahan bot chal raha hai.", quoted: m });
-                    return;
-                }
-                activatedUsers.add(from);
-                await conn.sendMessage(from, { text: "Chatbot Activated! Ab Aap Mujhse Baat Kar Saktay Hain Thanks For Using SHABAN-MD.", quoted: m });
-            } else {
-                return;
-            }
-        }
-
-        // chatbot off
-        if (lowerText === "chatbot off") {
-            if (!isBotItself) {
-                await conn.sendMessage(from, { text: "Sirf usi WhatsApp number se chatbot off ho sakta hai jahan bot chal raha hai.", quoted: m });
-                return;
-            }
-            activatedUsers.delete(from);
-            await conn.sendMessage(from, { text: "Chatbot Deactivated! Aapne Chatbot Band Kar Diya Hai Dobara Open Karne Ky Lye (chatbot on) Type Karain.", quoted: m });
+        // Check botNumber is set
+        if (!global.botNumber) {
+            console.log("Bot number not set yet.");
             return;
         }
 
-        // chatbot response
+        const isBotUser = senderNumber === global.botNumber;
+
+        // Handle chatbot on
+        if (lowerText === "chatbot on") {
+            if (!isBotUser) {
+                await conn.sendMessage(from, { text: "Sirf bot wale number se chatbot on ho sakta hai.", quoted: m });
+                return;
+            }
+            activatedUsers.add(from);
+            await conn.sendMessage(from, { text: "Chatbot Activated! Ab Aap Mujhse Baat Kar Saktay Hain. Thanks for using SHABAN-MD.", quoted: m });
+            return;
+        }
+
+        // Handle chatbot off
+        if (lowerText === "chatbot off") {
+            if (!isBotUser) {
+                await conn.sendMessage(from, { text: "Sirf bot wale number se chatbot off ho sakta hai.", quoted: m });
+                return;
+            }
+            activatedUsers.delete(from);
+            await conn.sendMessage(from, { text: "Chatbot Deactivated! Dobara activate karne ke liye 'chatbot on' type karein.", quoted: m });
+            return;
+        }
+
+        // Ignore if chatbot not active
+        if (!activatedUsers.has(from)) return;
+
+        // AI Response
         await conn.sendMessage(from, { react: { text: '🤖', key: m.key } });
 
         const apiUrl = `https://apis-keith.vercel.app/ai/gpt?q=${encodeURIComponent(text)}`;
@@ -203,8 +217,9 @@ conn.ev.on('messages.upsert', async (msg) => {
                 quoted: m
             });
         }
+
     } catch (err) {
-        console.error("Chatbot Error:", err);
+        console.error("Chatbot error:", err);
     }
 });
   
