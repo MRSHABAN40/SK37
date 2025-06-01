@@ -73,9 +73,11 @@ DEV: process.env.DEV || "923043788282",
 ANTI_VV: process.env.ANTI_VV || "false",
 // true for anti once view
 ANTI_CALL: process.env.ANTI_CALL || "true",
-REJECT_MSG: process.env.REJECT_MSG || "*_SOORY MY BOSS IS BUSY PLEASE DONT CALL ME_*", 
-ANTI_DEL_PATH: process.env.ANTI_DEL_PATH || "same", 
-// change it to 'same' if you want to resend deleted message in same chat 
+REJECT_MSG: process.env.REJECT_MSG || "*_SOORY MY BOSS IS BUSY PLEASE DONT CALL ME_*",
+ANTI_DELETE: process.env.ANTI_DELETE || "true",
+// set true false for anti delete
+ANTI_DEL_PATH: process.env.ANTI_DEL_PATH || "inbox", 
+// change it to 'same' if you want to resend deleted message in same chat
 AUTO_RECORDING: process.env.AUTO_RECORDING || "false"
 // make it true for auto recoding 
 };
