@@ -20,26 +20,28 @@ cmd({
 
     await conn.sendMessage(from, { react: { text: "⬇️", key: m.key } });
 
-    const apiUrl = `https://api.fgmods.xyz/api/downloader/gdrive?url=${q}&apikey=fg_gHDKTRUn`;
+    const apiUrl = `https://bk9.fun/download/gdrive?url=${encodeURIComponent(q)}`;
     const response = await axios.get(apiUrl);
-    const downloadUrl = response.data.result.downloadUrl;
+    const data = response.data;
 
-    if (downloadUrl) {
+    if (data.status && data.BK9 && data.BK9.downloadUrl) {
+      const file = data.BK9;
+
       await conn.sendMessage(from, { react: { text: "⬆️", key: m.key } });
 
       await conn.sendMessage(from, {
-        document: { url: downloadUrl },
-        mimetype: response.data.result.mimetype,
-        fileName: response.data.result.fileName,
-        caption: "*© Powered By Mʀ-Sʜᴀʙᴀɴ*"
+        document: { url: file.downloadUrl },
+        mimetype: file.mimetype || "application/octet-stream",
+        fileName: file.fileName || "file",
+        caption: `*📁 File Name:* ${file.fileName}\n*📦 Size:* ${file.fileSize}\n\n*© Powered By Mʀ-Sʜᴀʙᴀɴ*`
       }, { quoted: m });
 
       await conn.sendMessage(from, { react: { text: "✅", key: m.key } });
     } else {
-      return reply("⚠️ No download URL found. Please check the link and try again.");
+      return reply("⚠️ No download URL found. Please check the Google Drive link.");
     }
   } catch (error) {
     console.error("Error:", error);
-    reply("❌ An error occurred while fetching the Google Drive file. Please try again.");
+    reply("❌ An error occurred while fetching the Google Drive file. Please try again later.");
   }
-}); 
+});
