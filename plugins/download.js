@@ -241,18 +241,20 @@ cmd({
 
     await conn.sendMessage(from, { react: { text: "⬇️", key: m.key } });
 
-    const apiUrl = `https://api.fgmods.xyz/api/downloader/gdrive?url=${encodeURIComponent(q)}&apikey=fg_gHDKTRUn`;
+    const apiUrl = `https://bk9.fun/download/gdrive?url=${encodeURIComponent(q)}`;
     const response = await axios.get(apiUrl);
-    const result = response.data.result;
+    const data = response.data;
 
-    if (result && result.downloadUrl) {
+    if (data.status && data.BK9 && data.BK9.downloadUrl) {
+      const file = data.BK9;
+
       await conn.sendMessage(from, { react: { text: "⬆️", key: m.key } });
 
       await conn.sendMessage(from, {
-        document: { url: result.downloadUrl },
-        mimetype: result.mimetype || "application/octet-stream",
-        fileName: result.fileName || "file",
-        caption: `*📁 File Name:* ${result.fileName}\n*📦 Size:* ${result.fileSize}\n\n*© Powered By Mʀ-Sʜᴀʙᴀɴ*`
+        document: { url: file.downloadUrl },
+        mimetype: file.mimetype || "application/octet-stream",
+        fileName: file.fileName || "file",
+        caption: `*📁 File Name:* ${file.fileName}\n*📦 Size:* ${file.fileSize}\n\n*© Powered By Mʀ-Sʜᴀʙᴀɴ*`
       }, { quoted: m });
 
       await conn.sendMessage(from, { react: { text: "✅", key: m.key } });
