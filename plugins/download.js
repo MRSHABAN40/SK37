@@ -235,19 +235,19 @@ cmd({
   reply
 }) => {
   try {
-    if (!q) {
-      return reply("❌ Please provide a valid Google Drive link.");
-    }
+    if (!q) return reply("❌ Please provide a valid Google Drive link.");
+
+    // Auto-fix incomplete 'usp' parameter
+    let cleanLink = q.includes("usp=") ? q : q + "sharing";
 
     await conn.sendMessage(from, { react: { text: "⬇️", key: m.key } });
 
-    const apiUrl = `https://bk9.fun/download/gdrive?url=${encodeURIComponent(q)}`;
+    const apiUrl = `https://bk9.fun/download/gdrive?url=${encodeURIComponent(cleanLink)}`;
     const response = await axios.get(apiUrl);
     const data = response.data;
+    const file = data.BK9;
 
-    if (data.status && data.BK9 && data.BK9.downloadUrl) {
-      const file = data.BK9;
-
+    if (data.status && file && file.downloadUrl) {
       await conn.sendMessage(from, { react: { text: "⬆️", key: m.key } });
 
       await conn.sendMessage(from, {
@@ -262,7 +262,7 @@ cmd({
       return reply("⚠️ No download URL found. Please check the Google Drive link.");
     }
   } catch (error) {
-    console.error("Error:", error);
-    reply("❌ An error occurred while fetching the Google Drive file. Please try again later.");
+    console.error("❌ Error:", error.response?.data || error.message);
+    reply("❌ An error occurred while fetching the Google Drive file. Please try again.");
   }
 });
