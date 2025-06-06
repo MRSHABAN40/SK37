@@ -2,50 +2,46 @@ const { cmd } = require('../command');
 const config = require('../config');
 
 const linkPatterns = [
-  /https?:\/\/(?:chat\.whatsapp\.com|wa\.me)\/\S+/gi,
-  /^https?:\/\/(www\.)?whatsapp\.com\/channel\/([a-zA-Z0-9_-]+)$/,
-  /wa\.me\/\S+/gi,
-  /https?:\/\/(?:t\.me|telegram\.me)\/\S+/gi,
-  /https?:\/\/(?:www\.)?youtube\.com\/\S+/gi,
-  /https?:\/\/youtu\.be\/\S+/gi,
-  /https?:\/\/(?:www\.)?facebook\.com\/\S+/gi,
-  /https?:\/\/fb\.me\/\S+/gi,
-  /https?:\/\/(?:www\.)?instagram\.com\/\S+/gi,
-  /https?:\/\/(?:www\.)?twitter\.com\/\S+/gi,
-  /https?:\/\/(?:www\.)?tiktok\.com\/\S+/gi,
-  /https?:\/\/(?:www\.)?linkedin\.com\/\S+/gi,
-  /https?:\/\/(?:www\.)?snapchat\.com\/\S+/gi,
-  /https?:\/\/(?:www\.)?pinterest\.com\/\S+/gi,
-  /https?:\/\/(?:www\.)?reddit\.com\/\S+/gi,
-  /https?:\/\/ngl\/\S+/gi,
-  /https?:\/\/(?:www\.)?discord\.com\/\S+/gi,
-  /https?:\/\/(?:www\.)?twitch\.tv\/\S+/gi,
-  /https?:\/\/(?:www\.)?vimeo\.com\/\S+/gi,
-  /https?:\/\/(?:www\.)?dailymotion\.com\/\S+/gi,
-  /https?:\/\/(?:www\.)?medium\.com\/\S+/gi
+  /https?:\/\/\S+/gi // Yeh kisi bhi "http" ya "https" se start hone wale link ko pakdega
 ];
 
 cmd({
-  on: 'body'
+  on: "body"
 }, async (conn, m, store, {
   from,
   body,
   sender,
   isGroup,
   isAdmins,
-  isBotAdmins
+  isBotAdmins,
+  reply
 }) => {
   try {
-    if (!isGroup || isAdmins || !isBotAdmins) {
-      return;
-    }
+    if (!isGroup || isAdmins || !isBotAdmins) return;
 
+    // Detect link in message
+    const linkPatterns = [/https?:\/\/\S+/];
     const containsLink = linkPatterns.some(pattern => pattern.test(body));
 
-    if (containsLink && config.DELETE_LINKS === 'true') {
-      await conn.sendMessage(from, { delete: m.key }, { quoted: m });
+    if (containsLink && config.DELETE_LINK === 'true') {
+      console.log(`Link detected from ${sender}: ${body}`);
+
+      // Delete the message
+      try {
+        await conn.sendMessage(from, { delete: m.key });
+        console.log(`Message deleted: ${m.key.id}`);
+      } catch (deleteError) {
+        console.error("Failed to delete message:", deleteError);
+      }
+
+      // Just inform the group, do not remove the user
+      await conn.sendMessage(from, {
+        text: `🚫 SHABAN-MD: @${sender.split('@')[0]} sent a link. Message has been deleted.`,
+        mentions: [sender]
+      });
     }
   } catch (error) {
-    console.error(error);
+    console.error("Delete-link error:", error);
+    reply("❌ An error occurred while processing the anti-link command.");
   }
 });
