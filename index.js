@@ -101,14 +101,18 @@ const port = process.env.PORT || 9090;
     const { connection, lastDisconnect } = update;
 
     if (connection === 'close') {
-      const code = lastDisconnect?.error?.output?.statusCode;
+  console.log('🔌 WhatsApp connection closed.');
+  console.log('🧪 Last Disconnect:', lastDisconnect);
 
-      if (code === DisconnectReason.loggedOut) {
-        console.log('❌ Bot WhatsApp se logout ho gaya!');
-      } else {
-        console.log(`⚠️ Bot disconnect ho gaya, reason code: ${code}`);
-        connectToWA();
-      }
+  const code = lastDisconnect?.error?.output?.statusCode;
+  console.log('🛑 Disconnect code:', code);
+
+  if (code === DisconnectReason.loggedOut) {
+    console.log('❌ Bot WhatsApp se logout ho gaya!');
+  } else {
+    console.log(`⚠️ Bot disconnect ho gaya, reason code: ${code}`);
+    connectToWA();
+  }
     } else if (connection === 'open') {
       console.log('🧬 Installing Plugins');
       const path = require('path');
