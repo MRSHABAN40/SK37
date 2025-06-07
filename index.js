@@ -89,41 +89,46 @@ const port = process.env.PORT || 9090;
   var { version } = await fetchLatestBaileysVersion()
   
   const conn = makeWASocket({
-          logger: P({ level: 'silent' }),
-          printQRInTerminal: false,
-          browser: Browsers.macOS("Safari"),
-          syncFullHistory: true,
-          auth: state,
-          version
-          })
-      
+    logger: P({ level: 'silent' }),
+    printQRInTerminal: false,
+    browser: Browsers.macOS("Safari"),
+    syncFullHistory: true,
+    auth: state,
+    version
+  })
+
   conn.ev.on('connection.update', async (update) => {
-  const { connection, lastDisconnect } = update;
+    const { connection, lastDisconnect } = update;
 
-  if (connection === 'close') {
-    if (lastDisconnect.error.output.statusCode !== DisconnectReason.loggedOut) {
-      connectToWA();
-    }
-  } else if (connection === 'open') {
-    console.log('🧬 Installing Plugins');
-    const path = require('path');
-    fs.readdirSync("./plugins/").forEach((plugin) => {
-      if (path.extname(plugin).toLowerCase() == ".js") {
-        require("./plugins/" + plugin);
+    if (connection === 'close') {
+      const code = lastDisconnect?.error?.output?.statusCode;
+
+      if (code === DisconnectReason.loggedOut) {
+        console.log('❌ Bot WhatsApp se logout ho gaya!');
+      } else {
+        console.log(`⚠️ Bot disconnect ho gaya, reason code: ${code}`);
+        connectToWA();
       }
-    });
-    console.log('Plugins installed successful ✅');
-    console.log('Bot connected to whatsapp ✅');
+    } else if (connection === 'open') {
+      console.log('🧬 Installing Plugins');
+      const path = require('path');
+      fs.readdirSync("./plugins/").forEach((plugin) => {
+        if (path.extname(plugin).toLowerCase() == ".js") {
+          require("./plugins/" + plugin);
+        }
+      });
+      console.log('Plugins installed successful ✅');
+      console.log('Bot connected to whatsapp ✅');
 
-    // Auto bio update ko yahan call karein
-    try {
-      await startAutoBioUpdate(conn);
-      console.log("Auto bio started successfully.");
-    } catch (err) {
-      console.log("Failed to start auto bio:", err.message);
-    }
+      // Auto bio update ko yahan call karein
+      try {
+        await startAutoBioUpdate(conn);
+        console.log("Auto bio started successfully.");
+      } catch (err) {
+        console.log("Failed to start auto bio:", err.message);
+      }
 
-    let up = `*✨ Hello, SHABAN-MD Legend! ✨*
+      let up = `*✨ Hello, SHABAN-MD Legend! ✨*
 
 ╭─〔 *🤖 SHABAN-MD BOT* 〕  
 ├─▸ *Simplicity. Speed. Power!*  
@@ -139,9 +144,10 @@ const port = process.env.PORT || 9090;
 ╰─🛠️ *Prefix:* \`${prefix}\`
 
 > _© MADE BY MR SHABAN_`;
-    conn.sendMessage(conn.user.id, { image: { url: `https://i.ibb.co/RK56DRW/shaban-md.jpg` }, caption: up });
-  }
-});
+      conn.sendMessage(conn.user.id, { image: { url: `https://i.ibb.co/RK56DRW/shaban-md.jpg` }, caption: up });
+    }
+  });
+
   conn.ev.on('creds.update', saveCreds)
   
 // === AI Global Chatbot Handler ===
