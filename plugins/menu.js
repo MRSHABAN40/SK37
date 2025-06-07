@@ -116,6 +116,9 @@ _________________________
 ➤ 🔄 .fetch
 ➤ 🔄 .emoji
 ➤ 🔄 .enhance
+➤ 🔄 .remini
+➤ 🔄 .removebg
+➤ 🔄 .getimage
 _________________________
 ➤ 🎉 *Funmenu*
 ➤ 🎉 .emix 😀,🤣
@@ -125,11 +128,9 @@ _________________________
 ➤ ⬇️ *Dlmenu*
 ➤ 🎬 .capcut
 ➤ 🎵 .ringtone
-➤ 📲 .tiktok
 ➤ 📲 .tiktok2
 ➤ 🔍 .tiktoksearch
 ➤ 📸 .Instagram
-➤ 🌀 .facebook
 ➤ 🌀 .fb2
 ➤ 👻 .snapchat
 ➤ 🐦 .twitter
@@ -160,8 +161,8 @@ _________________________
 ➤ 👥 .join
 ➤ 👥 .invite
 ➤ 👥 .resetglink
-➤ 👥 .jid1
-➤ 👥 .gjid
+➤ 👥 .jid
+➤ 👥 .forward
 ➤ 👥 .removecountry 93/91/654/1
 ➤ 👥 .kickco 91/93/654/664
 _________________________
@@ -180,9 +181,11 @@ _________________________
 ➤ 👑 .antidelete || Bot User
 ➤ 👑 .fullpp || Bot User
 ➤ 👑 .vv6 || Bot User
-➤ 👑 .send6 || Bot User
+➤ 👑 .vv || Bot User
+➤ 👑 .save || Bot User
 ➤ 👑 .send || Public Use
 ➤ 👑 .sendme || Public Use
+➤ 👑 .sand || Public Use
 ➤ 👑 .chatbot on/off || Public
 ➤ 👑 .env || Public Use
 ➤ 👑 .allvar || Public Use
@@ -194,6 +197,8 @@ _________________________
 ➤ 👑 .owner || Public Use 
 ➤ 👑 .broadcast ×
 ➤ 👑 .siminfo || Bot User 
+➤ 👑 .sim || Bot User
+➤ 👑 .sim2 || Bot User 
 ➤ 👑 .ping || Public Use
 ➤ 👑 .speed || Public Use
 ➤ 👑 .fetch || Public Use

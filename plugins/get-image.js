@@ -33,7 +33,7 @@ cmd({
         // Send the image
         await conn.sendMessage(from, {
             image: { url: imageUrl },
-            caption: 'Here is your image from the URL'
+            caption: 'Here is your image from the URL SHABAN-MD'
         }, { quoted: mek });
 
     } catch (error) {
