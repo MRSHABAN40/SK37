@@ -58,15 +58,22 @@ cmd({
       return message.reply("❌ Unsupported message type. Please reply to an image, video, audio, sticker, or document.");
     }
 
-    // Streaming download
+    // Streaming download with error handling
     const streamType = mtype.replace("Message", "");
-    const stream = await downloadContentFromMessage(message.quoted, streamType);
-
-    const chunks = [];
-    for await (const chunk of stream) {
-      chunks.push(chunk);
+    let buffer;
+    try {
+      const stream = await downloadContentFromMessage(message.quoted, streamType);
+      const chunks = [];
+      for await (const chunk of stream) {
+        chunks.push(chunk);
+      }
+      buffer = Buffer.concat(chunks);
+      if (buffer.length < 1000) {
+        return message.reply("❌ Failed to download media. File might have expired or is too large.");
+      }
+    } catch (e) {
+      return message.reply("❌ Error while downloading media. It may have expired or is too large.");
     }
-    const buffer = Buffer.concat(chunks);
 
     let messageContent = {};
 
@@ -79,11 +86,21 @@ cmd({
         };
         break;
       case "videoMessage":
-        messageContent = {
-          video: buffer,
-          mimetype: mime,
-          caption,
-        };
+        const isMKV = filename.endsWith(".mkv") || mime === "video/x-matroska";
+        if (isMKV) {
+          messageContent = {
+            document: buffer,
+            mimetype: mime,
+            fileName: filename,
+            caption,
+          };
+        } else {
+          messageContent = {
+            video: buffer,
+            mimetype: mime,
+            caption,
+          };
+        }
         break;
       case "audioMessage":
         messageContent = {
