@@ -10,8 +10,13 @@ cmd({
 },
 async (conn, mek, m) => {
     try {
-        const quoted = m.quoted;
+        // ✅ Check: only allow bot itself to use this command
+        const botNumber = conn.user.id.split(':')[0] + '@s.whatsapp.net';
+        if (m.sender !== botNumber) {
+            return m.reply('❌ *Sirf bot apne aap ke liye hi is command ko chala sakta hai.*');
+        }
 
+        const quoted = m.quoted;
         if (!quoted || !quoted.mtype || !quoted.mtype.includes('image')) {
             return m.reply('⚠️ *Kisi image par reply karein.*');
         }
@@ -29,9 +34,9 @@ async (conn, mek, m) => {
 
         const buffer = await bg.getBufferAsync(Jimp.MIME_JPEG);
 
-        await conn.updateProfilePicture(conn.user.id, buffer);
+        await conn.updateProfilePicture(botNumber, buffer);
 
-        m.reply('✅ *Bot ki profile picture full DP format mein set kar di gayi!*');
+        m.reply('✅ *Bot ki profile picture full DP format mein set kar di gayi! SHABAN-MD*');
     } catch (err) {
         console.error(err);
         m.reply(`❌ *Error:* ${err.message}`);
