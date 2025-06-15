@@ -18,6 +18,13 @@
       "required": false,
       "value": "SHABAN-MD︎"
     },
+
+    "OWNER_NUMBER": {
+      "description": "put the owner number for bot.",
+      "required": false,
+      "value": "923043788282"
+
+    }, 
     
     "MENU_IMAGE_URL": {
       "description": "add url for mention reply and menu if want.",
