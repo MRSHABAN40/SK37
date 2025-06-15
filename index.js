@@ -159,8 +159,11 @@ conn.ev.on('messages.upsert', async (msg) => {
 
         const lowerText = text.trim().toLowerCase();
 
-        // Only bot number can activate/deactivate the chatbot
-        if (senderJid === conn.user.id) {
+        // ✅ Only bot number can activate/deactivate the chatbot
+        const botJid = (conn.user.id || '').split('@')[0];
+        const sender = (senderJid || '').split('@')[0];
+
+        if (sender === botJid) {
             if (lowerText === "chatbot on") {
                 chatbotActive = true;
                 await conn.sendMessage(from, { text: "🤖 Chatbot has been *Activated* successfully!", quoted: m });
@@ -173,10 +176,10 @@ conn.ev.on('messages.upsert', async (msg) => {
             }
         }
 
-        // Ignore all messages if chatbot is off
+        // ❌ Ignore all messages if chatbot is off
         if (!chatbotActive) return;
 
-        // Chatbot is active, continue with AI response
+        // ✅ Chatbot is active, continue with AI response
         await conn.sendMessage(from, { react: { text: '🤖', key: m.key } });
 
         const apiUrl = `https://apis-keith.vercel.app/ai/gpt?q=${encodeURIComponent(text)}`;
