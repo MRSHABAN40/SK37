@@ -1,5 +1,7 @@
-const os = require("os");
 const { cmd } = require('../command');
+const os = require("os");
+const { runtime } = require('../lib/functions');
+const config = require('../config');
 
 cmd({
     pattern: "alive",
@@ -9,43 +11,38 @@ cmd({
     react: "⚡",
     filename: __filename
 },
-async (conn, mek, m, { sender, from, reply }) => {
+async (conn, mek, m, { from, sender, reply }) => {
     try {
-        const start = Date.now();
+        const status = ` *📡 SHABAN MD V5*
 
-        // Platform Detection
-        let host = "Unknown VPS";
-        const env = process.env;
-
-        if (env.RENDER === "true") host = "Render";
-        else if (env.HEROKU_APP_NAME) host = "Heroku";
-        else if (env.KOYEB_APP_NAME) host = "Koyeb";
-        else if (env.RAILWAY_STATIC_URL) host = "Railway";
-        else if (env.REPL_ID || env.REPL_OWNER) host = "Replit";
-        else if (env.VERCEL === "1") host = "Vercel";
-
-        // Response Time
-        const ping = Date.now() - start;
-
-        const msg = `*🤖 SHABAN-MD is Alive!*
-
-🔋 *Uptime:* ${Math.floor(process.uptime())}s
-⚡ *Response:* ${ping}ms
-🖥️ *Host:* ${host}
-📡 *Platform:* ${os.platform()}
-🧠 *Memory:* ${(os.totalmem() / 1024 / 1024).toFixed(0)}MB
-
-✅ Bot is working fine, boss!`;
+✅ *Status:* Active  
+👑 *Owner:* ${config.OWNER_NAME}  
+🧩 *Version:* 3.0.0  
+🎯 *Mode:* ${config.MODE}  
+🎛️ *Prefix:* ${config.PREFIX}  
+💾 *RAM Usage:* ${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)}MB / ${(os.totalmem() / 1024 / 1024).toFixed(2)}MB  
+🖥️ *Host:* ${os.hostname()}  
+⏱️ *Uptime:* ${runtime(process.uptime())}
+__________________________________
+${config.DESCRIPTION}`;
 
         await conn.sendMessage(from, {
-            text: msg,
+            image: { url: "https://i.ibb.co/nqRfh0SB/shaban-md.jpg" },
+            caption: status,
             contextInfo: {
-                mentionedJid: [sender]
+                mentionedJid: [m.sender],
+                forwardingScore: 1000,
+                isForwarded: true,
+                forwardedNewsletterMessageInfo: {
+                    newsletterJid: '120363358310754973@newsletter',
+                    newsletterName: 'MR-SHABAN⁴⁰',
+                    serverMessageId: 143
+                }
             }
         }, { quoted: mek });
 
     } catch (e) {
-        console.error("❌ Alive command error:", e);
-        reply("Error in .alive command: " + e.message);
+        console.error("Alive Error:", e);
+        reply(`❌ Error: ${e.message}`);
     }
 });
