@@ -134,25 +134,25 @@ const port = process.env.PORT || 3000;
       console.log("Failed to start auto bio:", err.message);
     }
 
-    let up = `*✨ Hello, SHABAN-MD Legend! ✨*
+    let up = `╭━[ *🤖 SHABAN-MD BOT ONLINE* ]━╮
 
-╭─〔 *🤖 SHABAN-MD BOT* 〕  
-├─▸ *Simplicity. Speed. Power!*  
-╰─➤ *Your New WhatsApp Sidekick is Here!*
+✨ *Welcome, SHABAN-MD Legend!*
 
-*❤️ Thank you for Choosing SHABAN-MD!*
+🔹 *Status:* Online ✅  
+🔹 *Version:* V5.0  
+🔹 *Power:* Simplicity • Speed • Stability  
 
-╭──〔 🔗 *Quick Links* 〕  
-├─ 📢 *Join Our Channel:*  
-│   Click [**Here**](https://whatsapp.com/channel/0029VazjYjoDDmFZTZ9Ech3O) to join!  
-├─ ⭐ *Give Us a Star:*  
-│   Star Us [**Here**](https://github.com/MRSHABAN40/SHABAN-MD-V5)!  
-╰─🛠️ *Prefix:* \`${prefix}\`
+🛡️ *Thank You for Choosing SHABAN-MD!*
 
-> _© MADE BY MR SHABAN_`;
-    conn.sendMessage(conn.user.id, { image: { url: `https://i.ibb.co/RK56DRW/shaban-md.jpg` }, caption: up });
-  }
-});
+╭─────[ ⚙️ BOT INFO ]─────╮  
+🔸 *Prefix:* \`${prefix}\`  
+🔸 *Owner:* MR SHABAN  
+╰────────────────────╯
+
+📣 _Enjoy a Fast, Clean, and Powerful WhatsApp Bot._
+
+╰━━━[ © 2025 SHABAN-MD ]━━━╯`;
+conn.sendMessage(conn.user.id, {});
 
   conn.ev.on('creds.update', saveCreds)
   
