@@ -134,20 +134,13 @@ const port = process.env.PORT || 3000;
       console.log("Failed to start auto bio:", err.message);
     }
 
-    let up = `*✨ Hello, SHABAN-MD Legend! ✨*
-
-╭─〔 *🤖 SHABAN-MD BOT* 〕  
-├─▸ *Simplicity. Speed. Power!*  
-╰─➤ *Your New WhatsApp Sidekick is Here!*
-
-*❤️ Thank you for Choosing SHABAN-MD!*
-
-╭──〔 🔗 *Quick Links* 〕  
+    let up = `* Connected Bot ✅  
+├─ ⭐ *Give Us a Star Bot Repo*    
 ╰─🛠️ *Prefix:* \`${prefix}\`
 
 > _© MADE BY MR SHABAN_`;
-conn.sendMessage(conn.user.id, { caption: up });
-}
+    conn.sendMessage(conn.user.id, { image: { url: `https://i.ibb.co/RK56DRW/shaban-md.jpg` }, caption: up });
+  }
 });
 
   conn.ev.on('creds.update', saveCreds)
