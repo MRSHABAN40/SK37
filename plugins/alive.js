@@ -3,6 +3,16 @@ const os = require("os");
 const { runtime } = require('../lib/functions');
 const config = require('../config');
 
+function detectHostingPlatform() {
+    if (process.env.RAILWAY_STATIC_URL) return 'Railway';
+    if (process.env.REPL_ID) return 'Replit';
+    if (process.env.HEROKU_APP_NAME || process.env.DYNO) return 'Heroku';
+    if (process.env.RENDER) return 'Render';
+    if (process.env.CODESPACES) return 'GitHub Codespaces';
+    if (process.env.HOME?.includes('/home/container')) return 'VPS (Likely Ubuntu)';
+    return os.hostname(); // fallback
+}
+
 cmd({
     pattern: "alive",
     alias: ["status", "uptime", "a"],
@@ -13,6 +23,7 @@ cmd({
 },
 async (conn, mek, m, { from, sender, reply }) => {
     try {
+        const hostPlatform = detectHostingPlatform();
         const status = ` *📡 SHABAN MD V5*
 
 ✅ *Status:* Active  
@@ -21,7 +32,7 @@ async (conn, mek, m, { from, sender, reply }) => {
 🎯 *Mode:* ${config.MODE}  
 🎛️ *Prefix:* ${config.PREFIX}  
 💾 *RAM Usage:* ${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)}MB / ${(os.totalmem() / 1024 / 1024).toFixed(2)}MB  
-🖥️ *Host:* ${os.hostname()}  
+🖥️ *Host:* ${hostPlatform}  
 ⏱️ *Uptime:* ${runtime(process.uptime())}
 __________________________________
 ${config.DESCRIPTION}`;
