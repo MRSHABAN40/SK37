@@ -1,3 +1,4 @@
+global.botStatus = "disconnected"; // Default status
 const {
   default: makeWASocket,
     useMultiFileAuthState,
@@ -68,25 +69,18 @@ const {
   
   //===================SESSION-AUTH============================
 if (!fs.existsSync(__dirname + '/sessions/creds.json')) {
-    if(!config.SESSION_ID) return console.log('Please add your session to SESSION_ID env !!')
-    
-    const sessdata = config.SESSION_ID.replace("Sarkarmd$", '');
-    try {
-        // Decode base64 string
-        const decodedData = Buffer.from(sessdata, 'base64').toString('utf-8');
-        
-        // Write decoded data to creds.json
-        fs.writeFileSync(__dirname + '/sessions/creds.json', decodedData);
-        console.log("Session decoded and saved successfully ✅");
-    } catch (err) {
-        console.error("Error decoding session data:", err);
-        throw err;
-    }
-}
+if(!config.SESSION_ID) return console.log('Please add your session to SESSION_ID env !!')
+const sessdata = config.SESSION_ID.replace("SHABAN-MD~", '');
+const filer = File.fromURL(`https://mega.nz/file/${sessdata}`)
+filer.download((err, data) => {
+if(err) throw err
+fs.writeFile(__dirname + '/sessions/creds.json', data, () => {
+console.log("Session downloaded ✅")
+})})}
 
 const express = require("express");
 const app = express();
-const port = process.env.PORT || 9090;
+const port = process.env.PORT || 3000;
   
   //=============================================
   
@@ -105,41 +99,43 @@ const port = process.env.PORT || 9090;
   })
 
   conn.ev.on('connection.update', async (update) => {
-    const { connection, lastDisconnect } = update;
+  const { connection, lastDisconnect } = update;
 
-    if (connection === 'close') {
-  console.log('🔌 WhatsApp connection closed.');
-  console.log('🧪 Last Disconnect:', lastDisconnect);
+  if (connection === 'close') {
+    global.botStatus = "disconnected"; // 🔴 Status update
+    console.log('🔌 WhatsApp connection closed.');
+    console.log('🧪 Last Disconnect:', lastDisconnect);
 
-  const code = lastDisconnect?.error?.output?.statusCode;
-  console.log('🛑 Disconnect code:', code);
+    const code = lastDisconnect?.error?.output?.statusCode;
+    console.log('🛑 Disconnect code:', code);
 
-  if (code === DisconnectReason.loggedOut) {
-    console.log('❌ Bot WhatsApp se logout ho gaya!');
-  } else {
-    console.log(`⚠️ Bot disconnect ho gaya, reason code: ${code}`);
-    connectToWA();
-  }
-    } else if (connection === 'open') {
-      console.log('🧬 Installing Plugins');
-      const path = require('path');
-      fs.readdirSync("./plugins/").forEach((plugin) => {
-        if (path.extname(plugin).toLowerCase() == ".js") {
-          require("./plugins/" + plugin);
-        }
-      });
-      console.log('Plugins installed successful ✅');
-      console.log('Bot connected to whatsapp ✅');
-
-      // Auto bio update ko yahan call karein
-      try {
-        await startAutoBioUpdate(conn);
-        console.log("Auto bio started successfully.");
-      } catch (err) {
-        console.log("Failed to start auto bio:", err.message);
+    if (code === DisconnectReason.loggedOut) {
+      console.log('❌ Bot WhatsApp se logout ho gaya!');
+    } else {
+      console.log(`⚠️ Bot disconnect ho gaya, reason code: ${code}`);
+      connectToWA();
+    }
+  } else if (connection === 'open') {
+    global.botStatus = "connected"; // 🟢 Status update
+    console.log('🧬 Installing Plugins');
+    const path = require('path');
+    fs.readdirSync("./plugins/").forEach((plugin) => {
+      if (path.extname(plugin).toLowerCase() == ".js") {
+        require("./plugins/" + plugin);
       }
+    });
+    console.log('Plugins installed successful ✅');
+    console.log('Bot connected to whatsapp ✅');
 
-      let up = `*✨ Hello, SHABAN-MD Legend! ✨*
+    // Auto bio update ko yahan call karein
+    try {
+      await startAutoBioUpdate(conn);
+      console.log("Auto bio started successfully.");
+    } catch (err) {
+      console.log("Failed to start auto bio:", err.message);
+    }
+
+    let up = `*✨ Hello, SHABAN-MD Legend! ✨*
 
 ╭─〔 *🤖 SHABAN-MD BOT* 〕  
 ├─▸ *Simplicity. Speed. Power!*  
@@ -155,9 +151,9 @@ const port = process.env.PORT || 9090;
 ╰─🛠️ *Prefix:* \`${prefix}\`
 
 > _© MADE BY MR SHABAN_`;
-      conn.sendMessage(conn.user.id, { image: { url: `https://i.ibb.co/RK56DRW/shaban-md.jpg` }, caption: up });
-    }
-  });
+    conn.sendMessage(conn.user.id, { image: { url: `https://i.ibb.co/RK56DRW/shaban-md.jpg` }, caption: up });
+  }
+});
 
   conn.ev.on('creds.update', saveCreds)
   
@@ -963,31 +959,39 @@ if (!isReact && senderNumber === botNumber) {
         };
 
         // Status aka brio
-        conn.setStatus = status => {
-            conn.query({
-                tag: 'iq',
-                attrs: {
-                    to: '@s.whatsapp.net',
-                    type: 'set',
-                    xmlns: 'status',
-                },
-                content: [
-                    {
-                        tag: 'status',
-                        attrs: {},
-                        content: Buffer.from(status, 'utf-8'),
-                    },
-                ],
-            });
-            return status;
-        };
-    conn.serializeM = mek => sms(conn, mek, store);
-  }
-  
-  app.get("/", (req, res) => {
-  res.send("SHABAN MD STARTED ✅");
-  });
-  app.listen(port, () => console.log(`Server listening on port http://localhost:${port}`));
-  setTimeout(() => {
-  connectToWA()
-  }, 4000);
+conn.setStatus = status => {
+    conn.query({
+        tag: 'iq',
+        attrs: {
+            to: '@s.whatsapp.net',
+            type: 'set',
+            xmlns: 'status',
+        },
+        content: [
+            {
+                tag: 'status',
+                attrs: {},
+                content: Buffer.from(status, 'utf-8'),
+            },
+        ],
+    });
+    return status;
+};
+conn.serializeM = mek => sms(conn, mek, store);
+}
+
+// ✅ Redirect root to status page
+app.get("/", (req, res) => {
+  res.redirect("/status");
+});
+
+// ✅ Add status check route before app.listen
+app.get("/status", (req, res) => {
+  res.json({ status: global.botStatus || "unknown" });
+});
+
+app.listen(port, () => console.log(`Server listening on port http://localhost:${port}`));
+
+setTimeout(() => {
+  connectToWA();
+}, 3000);
