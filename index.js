@@ -83,12 +83,14 @@ const app = express();
 const port = process.env.PORT || 3000;
   
   //=============================================
-  
-  async function connectToWA() {
-  console.log("Connecting to WhatsApp ⏳️...");
-  const { state, saveCreds } = await useMultiFileAuthState(__dirname + '/sessions/')
-  var { version } = await fetchLatestBaileysVersion()
-  
+
+async function connectToWA() {
+  global.botStatus = "connecting"; // Initial status
+  console.log("⏳ Connecting to WhatsApp...");
+
+  const { state, saveCreds } = await useMultiFileAuthState(__dirname + '/sessions/');
+  const { version } = await fetchLatestBaileysVersion();
+
   const conn = makeWASocket({
     logger: P({ level: 'silent' }),
     printQRInTerminal: false,
@@ -96,46 +98,50 @@ const port = process.env.PORT || 3000;
     syncFullHistory: true,
     auth: state,
     version
-  })
+  });
 
   conn.ev.on('connection.update', async (update) => {
-  const { connection, lastDisconnect } = update;
+    const { connection, lastDisconnect } = update;
 
-  if (connection === 'close') {
-    global.botStatus = "disconnected"; // 🔴 Status update
-    console.log('🔌 WhatsApp connection closed.');
-    console.log('🧪 Last Disconnect:', lastDisconnect);
+    if (connection === 'close') {
+      global.botStatus = "disconnected";
+      console.log('🔌 WhatsApp connection closed.');
+      console.log('🧪 Last Disconnect:', lastDisconnect);
 
-    const code = lastDisconnect?.error?.output?.statusCode;
-    console.log('🛑 Disconnect code:', code);
+      const code = lastDisconnect?.error?.output?.statusCode;
+      console.log('🛑 Disconnect code:', code);
 
-    if (code === DisconnectReason.loggedOut) {
-      console.log('❌ Bot WhatsApp se logout ho gaya!');
-    } else {
-      console.log(`⚠️ Bot disconnect ho gaya, reason code: ${code}`);
-      connectToWA();
-    }
-  } else if (connection === 'open') {
-    global.botStatus = "connected"; // 🟢 Status update
-    console.log('🧬 Installing Plugins');
-    const path = require('path');
-    fs.readdirSync("./plugins/").forEach((plugin) => {
-      if (path.extname(plugin).toLowerCase() == ".js") {
-        require("./plugins/" + plugin);
+      if (code === DisconnectReason.loggedOut) {
+        console.log('❌ Bot WhatsApp se logout ho gaya!');
+      } else {
+        console.log(`⚠️ Bot disconnect ho gaya, reason code: ${code}`);
+        connectToWA(); // Reconnect if not logged out
       }
-    });
-    console.log('Plugins installed successful ✅');
-    console.log('Bot connected to whatsapp ✅');
-
-    // Auto bio update ko yahan call karein
-    try {
-      await startAutoBioUpdate(conn);
-      console.log("Auto bio started successfully.");
-    } catch (err) {
-      console.log("Failed to start auto bio:", err.message);
     }
 
-    let up = `*✨ Hello, SHABAN-MD Legend! ✨*
+    else if (connection === 'open') {
+      global.botStatus = "connected";
+      console.log('✅ Connected to WhatsApp');
+      console.log('🧬 Installing Plugins');
+
+      const path = require('path');
+      fs.readdirSync("./plugins/").forEach((plugin) => {
+        if (path.extname(plugin).toLowerCase() == ".js") {
+          require("./plugins/" + plugin);
+        }
+      });
+      console.log('✅ Plugins installed successfully');
+
+      // Auto bio
+      try {
+        await startAutoBioUpdate(conn);
+        console.log("✅ Auto bio started successfully");
+      } catch (err) {
+        console.log("❌ Failed to start auto bio:", err.message);
+      }
+
+      // Welcome message to bot owner
+      let up = `*✨ Hello, SHABAN-MD Legend! ✨*
 
 ╭─〔 *🤖 SHABAN-MD BOT* 〕  
 ├─▸ *Simplicity. Speed. Power!*  
@@ -151,11 +157,21 @@ const port = process.env.PORT || 3000;
 ╰─🛠️ *Prefix:* \`${prefix}\`
 
 > _© MADE BY MR SHABAN_`;
-    conn.sendMessage(conn.user.id, { image: { url: `https://i.ibb.co/RK56DRW/shaban-md.jpg` }, caption: up });
-  }
-});
 
-  conn.ev.on('creds.update', saveCreds)
+      conn.sendMessage(conn.user.id, {
+        image: { url: `https://i.ibb.co/RK56DRW/shaban-md.jpg` },
+        caption: up
+      });
+    }
+
+    else if (connection === 'connecting') {
+      global.botStatus = "connecting";
+      console.log("⏳ Connecting to WhatsApp...");
+    }
+  });
+
+  conn.ev.on('creds.update', saveCreds);
+}
   
 // === AI Global Chatbot Handler ===
 const activatedUsers = new Set(); // To track users who have sent "chatbot on"
