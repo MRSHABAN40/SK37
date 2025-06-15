@@ -144,7 +144,7 @@ const port = process.env.PORT || 3000;
   conn.ev.on('creds.update', saveCreds)
   
 // === AI Global Chatbot Handler ===
-let chatbotActive = false; // Only bot number can toggle this
+let chatbotActive = false;
 
 conn.ev.on('messages.upsert', async (msg) => {
     try {
@@ -159,10 +159,17 @@ conn.ev.on('messages.upsert', async (msg) => {
 
         const lowerText = text.trim().toLowerCase();
 
-        // ✅ Only bot number can activate/deactivate the chatbot
+        // ✅ DEBUGGING INFO
+        console.log("🤖 DEBUG LOG:");
+        console.log("conn.user.id =>", conn.user?.id);
+        console.log("senderJid =>", senderJid);
+        console.log("from =>", from);
+        console.log("text =>", text);
+
         const botJid = (conn.user.id || '').split('@')[0];
         const sender = (senderJid || '').split('@')[0];
 
+        // ✅ Bot number se control
         if (sender === botJid) {
             if (lowerText === "chatbot on") {
                 chatbotActive = true;
@@ -176,10 +183,10 @@ conn.ev.on('messages.upsert', async (msg) => {
             }
         }
 
-        // ❌ Ignore all messages if chatbot is off
+        // ❌ Agar chatbot band hai to ignore karo
         if (!chatbotActive) return;
 
-        // ✅ Chatbot is active, continue with AI response
+        // ✅ Chatbot ka response
         await conn.sendMessage(from, { react: { text: '🤖', key: m.key } });
 
         const apiUrl = `https://apis-keith.vercel.app/ai/gpt?q=${encodeURIComponent(text)}`;
