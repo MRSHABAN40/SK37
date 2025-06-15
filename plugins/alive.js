@@ -2,6 +2,7 @@ const { cmd } = require('../command');
 const os = require("os");
 const { runtime } = require('../lib/functions');
 const config = require('../config');
+const https = require("https");
 
 function detectHostingPlatform() {
     if (process.env.RAILWAY_STATIC_URL) return 'Railway';
@@ -10,7 +11,35 @@ function detectHostingPlatform() {
     if (process.env.RENDER) return 'Render';
     if (process.env.CODESPACES) return 'GitHub Codespaces';
     if (process.env.HOME?.includes('/home/container')) return 'VPS (Likely Ubuntu)';
-    return os.hostname(); // fallback
+    return os.hostname();
+}
+
+function getUptimeBar(seconds) {
+    const totalBars = 10;
+    const maxUptime = 24 * 60 * 60;
+    const filledBars = Math.round((seconds / maxUptime) * totalBars);
+    return '🟩'.repeat(filledBars) + '⬛'.repeat(totalBars - filledBars);
+}
+
+function getLinuxDistro() {
+    try {
+        const fs = require('fs');
+        const data = fs.readFileSync('/etc/os-release', 'utf-8');
+        const nameLine = data.split('\n').find(line => line.startsWith('PRETTY_NAME='));
+        return nameLine ? nameLine.split('=')[1].replace(/"/g, '') : 'Unknown Linux';
+    } catch {
+        return 'Unknown OS';
+    }
+}
+
+function getPublicIP() {
+    return new Promise((resolve) => {
+        https.get('https://api.ipify.org', (res) => {
+            let ip = '';
+            res.on('data', chunk => ip += chunk);
+            res.on('end', () => resolve(ip));
+        }).on('error', () => resolve('Unavailable'));
+    });
 }
 
 cmd({
@@ -24,16 +53,29 @@ cmd({
 async (conn, mek, m, { from, sender, reply }) => {
     try {
         const hostPlatform = detectHostingPlatform();
-        const status = ` *📡 SHABAN MD V5*
+        const distro = getLinuxDistro();
+        const ip = await getPublicIP();
+        const ramUsed = (process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2);
+        const ramTotal = (os.totalmem() / 1024 / 1024).toFixed(2);
+        const uptimeSeconds = process.uptime();
+        const uptimeBar = getUptimeBar(uptimeSeconds);
+        const uptimeText = runtime(uptimeSeconds);
+
+        const status = `*📡 SHABAN MD V5*
 
 ✅ *Status:* Active  
 👑 *Owner:* ${config.OWNER_NAME}  
 🧩 *Version:* 3.0.0  
 🎯 *Mode:* ${config.MODE}  
-🎛️ *Prefix:* ${config.PREFIX}  
-💾 *RAM Usage:* ${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)}MB / ${(os.totalmem() / 1024 / 1024).toFixed(2)}MB  
+🎛️ *Prefix:* ${config.PREFIX}
+
+💾 *RAM Usage:* ${ramUsed}MB / ${ramTotal}MB  
+⏱️ *Uptime:* ${uptimeText}  
+📊 *Bar:* ${uptimeBar}
+
 🖥️ *Host:* ${hostPlatform}  
-⏱️ *Uptime:* ${runtime(process.uptime())}
+🐧 *OS:* ${distro}  
+🌐 *IP:* ${ip}
 __________________________________
 ${config.DESCRIPTION}`;
 
