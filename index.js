@@ -102,7 +102,7 @@ const port = process.env.PORT || 3000;
     const { connection, lastDisconnect } = update;
 
     if (connection === 'close') {
-      global.botStatus = "disconnected";
+      global.botStatus = "disconnected"; // 🔴 Status update
       console.log('🔌 WhatsApp connection closed.');
       console.log('🧪 Last Disconnect:', lastDisconnect);
 
@@ -117,7 +117,7 @@ const port = process.env.PORT || 3000;
       }
 
     } else if (connection === 'open') {
-      global.botStatus = "connected";
+      global.botStatus = "connected"; // 🟢 Status update
       console.log('🧬 Installed Plugins ✅');
       fs.readdirSync("./plugins/").forEach((plugin) => {
         if (path.extname(plugin).toLowerCase() == ".js") {
@@ -127,6 +127,7 @@ const port = process.env.PORT || 3000;
       console.log('Plugins installed successful ✅');
       console.log('Bot connected to whatsapp ✅');
 
+      // Auto bio update ko yahan call karein
       try {
         await startAutoBioUpdate(conn);
         console.log("Auto bio started successfully.");
@@ -134,14 +135,9 @@ const port = process.env.PORT || 3000;
         console.log("Failed to start auto bio:", err.message);
       }
 
-      // ✅ Only send "BOT CONNECTED" if it's the first deployment
-      const flagFile = './.connected';
-      if (!fs.existsSync(flagFile)) {
-        let up = `BOT CONNECTED`;
-        await conn.sendMessage(conn.user.id, { text: up });
-        fs.writeFileSync(flagFile, 'sent');
-        console.log("First-time BOT CONNECTED message sent.");
-      }
+      // ✅ Simple "BOT CONNECTED" message
+      let up = `BOT CONNECTED SHABAN MD V5`;
+      conn.sendMessage(conn.user.id, { text: up });
     }
   });
 
