@@ -113,37 +113,20 @@ const port = process.env.PORT || 3000;
       if (!text) return;
       const lowerText = text.trim().toLowerCase();
 
-      // ✅ Only bot number can toggle chatbot
-      if (senderJid === conn.user.id) {
-        if (lowerText === "chatbot on") {
-          chatbotActive = true;
-          await conn.sendMessage(from, { text: "🤖 Chatbot Activated!", quoted: m });
-          return;
-        }
-        if (lowerText === "chatbot off") {
-          chatbotActive = false;
-          await conn.sendMessage(from, { text: "❌ Chatbot Deactivated!", quoted: m });
-          return;
-        }
-      }
+     // ✅ Only bot number can toggle chatbot
+if ((senderJid === conn.user.id) || (from === conn.user.id)) {
+  if (lowerText === "chatbot on") {
+    chatbotActive = true;
+    await conn.sendMessage(from, { text: "🤖 Chatbot Activated!", quoted: m });
+    return;
+  }
 
-      if (!chatbotActive) return;
-
-      // 🤖 Send typing and AI reply
-      await conn.sendMessage(from, { react: { text: '🤖', key: m.key } });
-
-      const apiUrl = `https://apis-keith.vercel.app/ai/gpt?q=${encodeURIComponent(text)}`;
-      const { data } = await axios.get(apiUrl);
-
-      await conn.sendMessage(from, {
-        text: data?.result || "AI couldn't respond at the moment.",
-        quoted: m
-      });
-
-    } catch (err) {
-      console.error("Global AI Chatbot Error:", err);
-    }
-  });
+  if (lowerText === "chatbot off") {
+    chatbotActive = false;
+    await conn.sendMessage(from, { text: "❌ Chatbot Deactivated!", quoted: m });
+    return;
+  }
+}
 
   // === WhatsApp connection status handler ===
   conn.ev.on('connection.update', async (update) => {
