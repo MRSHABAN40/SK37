@@ -96,8 +96,56 @@ const port = process.env.PORT || 3000;
     syncFullHistory: true,
     auth: state,
     version
-  })
+  });
 
+  // === AI Global Chatbot Handler ===
+  let chatbotActive = false;
+
+  conn.ev.on('messages.upsert', async (msg) => {
+    try {
+      const m = msg.messages[0];
+      if (!m.message || m.key.fromMe || m.key.participant === conn.user.id) return;
+
+      const text = m.message?.conversation || m.message?.extendedTextMessage?.text;
+      const from = m.key.remoteJid;
+      const senderJid = m.key.participant || from;
+
+      if (!text) return;
+      const lowerText = text.trim().toLowerCase();
+
+      // ✅ Only bot number can toggle chatbot
+      if (senderJid === conn.user.id) {
+        if (lowerText === "chatbot on") {
+          chatbotActive = true;
+          await conn.sendMessage(from, { text: "🤖 Chatbot Activated!", quoted: m });
+          return;
+        }
+        if (lowerText === "chatbot off") {
+          chatbotActive = false;
+          await conn.sendMessage(from, { text: "❌ Chatbot Deactivated!", quoted: m });
+          return;
+        }
+      }
+
+      if (!chatbotActive) return;
+
+      // 🤖 Send typing and AI reply
+      await conn.sendMessage(from, { react: { text: '🤖', key: m.key } });
+
+      const apiUrl = `https://apis-keith.vercel.app/ai/gpt?q=${encodeURIComponent(text)}`;
+      const { data } = await axios.get(apiUrl);
+
+      await conn.sendMessage(from, {
+        text: data?.result || "AI couldn't respond at the moment.",
+        quoted: m
+      });
+
+    } catch (err) {
+      console.error("Global AI Chatbot Error:", err);
+    }
+  });
+
+  // === WhatsApp connection status handler ===
   conn.ev.on('connection.update', async (update) => {
     const { connection, lastDisconnect } = update;
 
@@ -142,72 +190,6 @@ const port = process.env.PORT || 3000;
   });
 
   conn.ev.on('creds.update', saveCreds)
-  
-// === AI Global Chatbot Handler ===
-let chatbotActive = false;
-
-conn.ev.on('messages.upsert', async (msg) => {
-    try {
-        const m = msg.messages[0];
-        if (!m.message) return;
-
-        const text = m.message?.conversation || m.message?.extendedTextMessage?.text;
-        const from = m.key.remoteJid;
-        const senderJid = m.key.participant || from;
-
-        if (!text) return;
-
-        const lowerText = text.trim().toLowerCase();
-
-        // ✅ DEBUGGING INFO
-        console.log("🤖 DEBUG LOG:");
-        console.log("conn.user.id =>", conn.user?.id);
-        console.log("senderJid =>", senderJid);
-        console.log("from =>", from);
-        console.log("text =>", text);
-
-        const botJid = (conn.user.id || '').split('@')[0];
-        const sender = (senderJid || '').split('@')[0];
-
-        // ✅ Bot number se control
-        if (sender === botJid) {
-            if (lowerText === "chatbot on") {
-                chatbotActive = true;
-                await conn.sendMessage(from, { text: "🤖 Chatbot has been *Activated* successfully!", quoted: m });
-                return;
-            }
-            if (lowerText === "chatbot off") {
-                chatbotActive = false;
-                await conn.sendMessage(from, { text: "❌ Chatbot has been *Deactivated*.", quoted: m });
-                return;
-            }
-        }
-
-        // ❌ Agar chatbot band hai to ignore karo
-        if (!chatbotActive) return;
-
-        // ✅ Chatbot ka response
-        await conn.sendMessage(from, { react: { text: '🤖', key: m.key } });
-
-        const apiUrl = `https://apis-keith.vercel.app/ai/gpt?q=${encodeURIComponent(text)}`;
-        const { data } = await axios.get(apiUrl);
-
-        if (data?.status && data.result) {
-            await conn.sendMessage(from, {
-                text: data.result,
-                quoted: m
-            });
-        } else {
-            await conn.sendMessage(from, {
-                text: "AI couldn't respond at the moment.",
-                quoted: m
-            });
-        }
-
-    } catch (err) {
-        console.error("Global AI Chatbot Error:", err);
-    }
-});
   
   // GROUP EVENTS (Welcome / Goodbye / Promote / Demote)
 conn.ev.on('group-participants.update', async (update) => {
