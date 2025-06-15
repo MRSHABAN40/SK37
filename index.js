@@ -134,25 +134,21 @@ const port = process.env.PORT || 3000;
       console.log("Failed to start auto bio:", err.message);
     }
 
-    let up = `╭━[ *🤖 SHABAN-MD BOT ONLINE* ]━╮
+    let up = `*✨ Hello, SHABAN-MD Legend! ✨*
 
-✨ *Welcome, SHABAN-MD Legend!*
+╭─〔 *🤖 SHABAN-MD BOT* 〕  
+├─▸ *Simplicity. Speed. Power!*  
+╰─➤ *Your New WhatsApp Sidekick is Here!*
 
-🔹 *Status:* Online ✅  
-🔹 *Version:* V5.0  
-🔹 *Power:* Simplicity • Speed • Stability  
+*❤️ Thank you for Choosing SHABAN-MD!*
 
-🛡️ *Thank You for Choosing SHABAN-MD!*
+╭──〔 🔗 *Quick Links* 〕  
+╰─🛠️ *Prefix:* \`${prefix}\`
 
-╭─────[ ⚙️ BOT INFO ]─────╮  
-🔸 *Prefix:* \`${prefix}\`  
-🔸 *Owner:* MR SHABAN  
-╰────────────────────╯
-
-📣 _Enjoy a Fast, Clean, and Powerful WhatsApp Bot._
-
-╰━━━[ © 2025 SHABAN-MD ]━━━╯`;
-conn.sendMessage(conn.user.id, {});
+> _© MADE BY MR SHABAN_`;
+conn.sendMessage(conn.user.id, { caption: up });
+}
+});
 
   conn.ev.on('creds.update', saveCreds)
   
