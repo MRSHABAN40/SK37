@@ -136,7 +136,7 @@ const port = process.env.PORT || 3000;
       }
 
       // ✅ Simple "BOT CONNECTED" message
-      let up = `BOT CONNECTED SHABAN MD V5`;
+      let up = `*BOT CONNECTED SHABAN MD V5*`;
       conn.sendMessage(conn.user.id, { text: up });
     }
   });
@@ -144,7 +144,7 @@ const port = process.env.PORT || 3000;
   conn.ev.on('creds.update', saveCreds)
   
 // === AI Global Chatbot Handler ===
-const activatedUsers = new Set(); // To track users who have sent "chatbot on"
+let chatbotActive = false; // Only bot number can toggle this
 
 conn.ev.on('messages.upsert', async (msg) => {
     try {
@@ -153,30 +153,30 @@ conn.ev.on('messages.upsert', async (msg) => {
 
         const text = m.message?.conversation || m.message?.extendedTextMessage?.text;
         const from = m.key.remoteJid;
+        const senderJid = m.key.participant || from;
 
         if (!text) return;
 
         const lowerText = text.trim().toLowerCase();
 
-        // Handle "chatbot on" to activate chatbot
-        if (!activatedUsers.has(from)) {
+        // Only bot number can activate/deactivate the chatbot
+        if (senderJid === conn.user.id) {
             if (lowerText === "chatbot on") {
-                activatedUsers.add(from);
-                await conn.sendMessage(from, { text: "Chatbot Activated! Ab Aap Mujhse Baat Kar Saktay Hain Thanks For Using SHABAN-MD.", quoted: m });
-            } else {
-                // Ignore messages until "chatbot on" is received
+                chatbotActive = true;
+                await conn.sendMessage(from, { text: "🤖 Chatbot has been *Activated* successfully!", quoted: m });
+                return;
+            }
+            if (lowerText === "chatbot off") {
+                chatbotActive = false;
+                await conn.sendMessage(from, { text: "❌ Chatbot has been *Deactivated*.", quoted: m });
                 return;
             }
         }
 
-        // Handle "chatbot off" to deactivate chatbot
-        if (lowerText === "chatbot off") {
-            activatedUsers.delete(from);
-            await conn.sendMessage(from, { text: "Chatbot Deactivated! Aapne Chatbot Band Kar Diya Hai Dobara Open Karne Ky Lye (chatbot on) Type Karain.", quoted: m });
-            return;
-        }
+        // Ignore all messages if chatbot is off
+        if (!chatbotActive) return;
 
-        // Chatbot is active for this user, continue with AI response
+        // Chatbot is active, continue with AI response
         await conn.sendMessage(from, { react: { text: '🤖', key: m.key } });
 
         const apiUrl = `https://apis-keith.vercel.app/ai/gpt?q=${encodeURIComponent(text)}`;
@@ -184,7 +184,7 @@ conn.ev.on('messages.upsert', async (msg) => {
 
         if (data?.status && data.result) {
             await conn.sendMessage(from, {
-                text: data.result, // Removed the "🤖 *AI Response:*" part
+                text: data.result,
                 quoted: m
             });
         } else {
@@ -193,6 +193,7 @@ conn.ev.on('messages.upsert', async (msg) => {
                 quoted: m
             });
         }
+
     } catch (err) {
         console.error("Global AI Chatbot Error:", err);
     }
