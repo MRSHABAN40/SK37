@@ -99,49 +99,47 @@ const port = process.env.PORT || 3000;
   })
 
   conn.ev.on('connection.update', async (update) => {
-  const { connection, lastDisconnect } = update;
+    const { connection, lastDisconnect } = update;
 
-  if (connection === 'close') {
-    global.botStatus = "disconnected"; // 🔴 Status update
-    console.log('🔌 WhatsApp connection closed.');
-    console.log('🧪 Last Disconnect:', lastDisconnect);
+    if (connection === 'close') {
+      global.botStatus = "disconnected"; // 🔴 Status update
+      console.log('🔌 WhatsApp connection closed.');
+      console.log('🧪 Last Disconnect:', lastDisconnect);
 
-    const code = lastDisconnect?.error?.output?.statusCode;
-    console.log('🛑 Disconnect code:', code);
+      const code = lastDisconnect?.error?.output?.statusCode;
+      console.log('🛑 Disconnect code:', code);
 
-    if (code === DisconnectReason.loggedOut) {
-      console.log('❌ Bot WhatsApp se logout ho gaya!');
-    } else {
-      console.log(`⚠️ Bot disconnect ho gaya, reason code: ${code}`);
-      connectToWA();
-    }
-  } else if (connection === 'open') {
-    global.botStatus = "connected"; // 🟢 Status update
-    console.log('🧬 Installed Plugins ✅');
-    fs.readdirSync("./plugins/").forEach((plugin) => {
-      if (path.extname(plugin).toLowerCase() == ".js") {
-        require("./plugins/" + plugin);
+      if (code === DisconnectReason.loggedOut) {
+        console.log('❌ Bot WhatsApp se logout ho gaya!');
+      } else {
+        console.log(`⚠️ Bot disconnect ho gaya, reason code: ${code}`);
+        connectToWA();
       }
-    });
-    console.log('Plugins installed successful ✅');
-    console.log('Bot connected to whatsapp ✅');
 
-    // Auto bio update ko yahan call karein
-    try {
-      await startAutoBioUpdate(conn);
-      console.log("Auto bio started successfully.");
-    } catch (err) {
-      console.log("Failed to start auto bio:", err.message);
+    } else if (connection === 'open') {
+      global.botStatus = "connected"; // 🟢 Status update
+      console.log('🧬 Installed Plugins ✅');
+      fs.readdirSync("./plugins/").forEach((plugin) => {
+        if (path.extname(plugin).toLowerCase() == ".js") {
+          require("./plugins/" + plugin);
+        }
+      });
+      console.log('Plugins installed successful ✅');
+      console.log('Bot connected to whatsapp ✅');
+
+      // Auto bio update ko yahan call karein
+      try {
+        await startAutoBioUpdate(conn);
+        console.log("Auto bio started successfully.");
+      } catch (err) {
+        console.log("Failed to start auto bio:", err.message);
+      }
+
+      // ✅ Simple "BOT CONNECTED" message
+      let up = `BOT CONNECTED`;
+      conn.sendMessage(conn.user.id, { text: up });
     }
-
-    let up = `* Connected Bot ✅  
-├─ ⭐ *Give Us a Star Bot Repo*    
-╰─🛠️ *Prefix:* \`${prefix}\`
-
-> _© MADE BY MR SHABAN_`;
-    conn.sendMessage(conn.user.id, { image: { url: `https://i.ibb.co/RK56DRW/shaban-md.jpg` }, caption: up });
-  }
-});
+  });
 
   conn.ev.on('creds.update', saveCreds)
   
@@ -218,7 +216,7 @@ conn.ev.on('call', async (calls) => {
 
       await conn.rejectCall(id, from);
       await conn.sendMessage(from, {
-        text: config.REJECT_MSG || ' *_SOORY MY BOSS IS BUSY PLEASE DONT CALL ME POWERED BY SHABAN MD_* '
+        text: config.REJECT_MSG || ' *_PLEASE DONT CALL ME POWERED BY SHABAN MD_* '
       });
       console.log(`Call rejected and message sent to ${from}`);
     }
