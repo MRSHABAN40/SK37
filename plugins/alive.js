@@ -1,49 +1,51 @@
 const os = require("os");
-const { cmd } = require("../command");
-const pkg = require("../package.json");
+const { cmd } = require('../command');
 
 cmd({
-  pattern: "alive",
-  alias: ["status", "uptime", "a"],
-  desc: "Check if the bot is online and active",
-  category: "main",
-  react: "💠",
-  filename: __filename,
+    pattern: "alive",
+    alias: ["status", "uptime", "a"],
+    desc: "Check if the bot is online and active",
+    category: "main",
+    react: "⚡",
+    filename: __filename
 },
-async (conn, mek, m, { from, sender, reply }) => {
-  try {
-    const uptime = process.uptime(); // in seconds
-    const hours = Math.floor(uptime / 3600);
-    const minutes = Math.floor((uptime % 3600) / 60);
-    const seconds = Math.floor(uptime % 60);
-    const uptimeFormatted = `${hours}h ${minutes}m ${seconds}s`;
+async (conn, mek, m, { sender, from, reply }) => {
+    try {
+        const start = Date.now();
 
-    // Detect Host Platform
-    let host = "VPS / Localhost";
-    if (process.env.RENDER === "true") host = "Render";
-    else if (process.env.HEROKU_APP_NAME) host = "Heroku";
-    else if (process.env.RAILWAY_STATIC_URL) host = "Railway";
+        // Platform Detection
+        let host = "Unknown VPS";
+        const env = process.env;
 
-    const text = `🧿 *SHABAN-MD IS ALIVE* 🧿
+        if (env.RENDER === "true") host = "Render";
+        else if (env.HEROKU_APP_NAME) host = "Heroku";
+        else if (env.KOYEB_APP_NAME) host = "Koyeb";
+        else if (env.RAILWAY_STATIC_URL) host = "Railway";
+        else if (env.REPL_ID || env.REPL_OWNER) host = "Replit";
+        else if (env.VERCEL === "1") host = "Vercel";
 
-✨ *Bot Name:* SHABAN-MD
-🚦 *Status:* ✅ Online & Running
-🕒 *Uptime:* ${uptimeFormatted}
-💻 *Host:* ${host}
-🛠 *Version:* ${pkg.version}
-👑 *Owner:* ${pkg.author || "Mr Shaban"}
+        // Response Time
+        const ping = Date.now() - start;
 
-🔗 *Made with ❤️ by SHABAN*`;
+        const msg = `*🤖 SHABAN-MD is Alive!*
 
-    await conn.sendMessage(from, {
-      text,
-      contextInfo: {
-        mentionedJid: [sender],
-      },
-    }, { quoted: mek });
+🔋 *Uptime:* ${Math.floor(process.uptime())}s
+⚡ *Response:* ${ping}ms
+🖥️ *Host:* ${host}
+📡 *Platform:* ${os.platform()}
+🧠 *Memory:* ${(os.totalmem() / 1024 / 1024).toFixed(0)}MB
 
-  } catch (err) {
-    console.error("Alive command error:", err);
-    reply(`❌ *Error:* ${err.message}`);
-  }
+✅ Bot is working fine, boss!`;
+
+        await conn.sendMessage(from, {
+            text: msg,
+            contextInfo: {
+                mentionedJid: [sender]
+            }
+        }, { quoted: mek });
+
+    } catch (e) {
+        console.error("❌ Alive command error:", e);
+        reply("Error in .alive command: " + e.message);
+    }
 });
