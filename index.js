@@ -85,7 +85,7 @@ const port = process.env.PORT || 3000;
   //=============================================
   
   async function connectToWA() {
-  console.log("Connected To WhatsApp ✅");
+  console.log("Connected ✅");
   const { state, saveCreds } = await useMultiFileAuthState(__dirname + '/sessions/')
   var { version } = await fetchLatestBaileysVersion()
   
@@ -117,8 +117,7 @@ const port = process.env.PORT || 3000;
     }
   } else if (connection === 'open') {
     global.botStatus = "connected"; // 🟢 Status update
-    console.log('🧬 Installing Plugins');
-    const path = require('path');
+    console.log('🧬 Installed Plugins ✅');
     fs.readdirSync("./plugins/").forEach((plugin) => {
       if (path.extname(plugin).toLowerCase() == ".js") {
         require("./plugins/" + plugin);
