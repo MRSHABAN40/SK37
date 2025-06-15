@@ -1,5 +1,5 @@
 const config = require('../config');
-const { cmd, commands } = require('../command');
+const { cmd } = require('../command');
 
 cmd({
     pattern: "ping",
@@ -12,8 +12,6 @@ cmd({
 },
 async (conn, mek, m, { from, quoted, sender, reply }) => {
     try {
-        const start = Date.now(); // Execution start time
-
         const reactionEmojis = ['🚛', '🚚', '🚜', '🚒', '🚐', '🛻', '🚗', '🚙', '🏎️', '🏍️'];
         const textEmojis = ['🚁', '🛸', '⚡️', '🚀', '🛩️', '🎠', '🚍', '🚔', '🚘', '🚖'];
 
@@ -21,24 +19,25 @@ async (conn, mek, m, { from, quoted, sender, reply }) => {
         const filteredEmojis = textEmojis.filter(e => e !== reactionEmoji);
         const textEmoji = filteredEmojis[Math.floor(Math.random() * filteredEmojis.length)];
 
-        // Send reaction
+        // React fast
         await conn.sendMessage(from, {
             react: { text: textEmoji, key: m.key }
         });
 
-        const responseTime = Date.now() - start; // Calculate response time
+        const start = Date.now(); // Measure after reaction
+        const sent = await conn.sendMessage(from, {
+            text: '♻️ Testing ping...',
+        }, { quoted: mek });
+        const responseTime = Date.now() - start;
 
-        // VIP style response
-        const text = `*SHABAN-MD SERVER SPEED:* 🐦‍🔥  
-🚀 *Response Time:* ${responseTime}ms ${reactionEmoji}  
-👑 *Status:* Ultra-Fast 🦅`;
-
+        // Edit response with final result
         await conn.sendMessage(from, {
-            text,
+            text: `*SHABAN-MD SERVER SPEED:* 🐦‍🔥\n\n🚀 *Response Time:* ${responseTime}ms ${reactionEmoji}\n👑 *Status:* Ultra-Fast 🦅`,
+            edit: sent.key,
             contextInfo: {
                 mentionedJid: [sender]
             }
-        }, { quoted: mek });
+        });
 
     } catch (e) {
         console.error("Error in ping command:", e);
