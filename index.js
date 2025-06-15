@@ -149,7 +149,7 @@ let chatbotActive = false; // Only bot number can toggle this
 conn.ev.on('messages.upsert', async (msg) => {
     try {
         const m = msg.messages[0];
-        if (!m.message || m.key.fromMe || m.key.participant === conn.user.id) return;
+        if (!m.message) return;
 
         const text = m.message?.conversation || m.message?.extendedTextMessage?.text;
         const from = m.key.remoteJid;
