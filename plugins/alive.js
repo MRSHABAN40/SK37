@@ -3,6 +3,8 @@ const os = require("os");
 const { runtime } = require('../lib/functions');
 const config = require('../config');
 const https = require("https");
+const { execSync } = require("child_process");
+const fs = require('fs');
 
 function detectHostingPlatform() {
     if (process.env.RAILWAY_STATIC_URL) return 'Railway';
@@ -23,12 +25,35 @@ function getUptimeBar(seconds) {
 
 function getLinuxDistro() {
     try {
-        const fs = require('fs');
         const data = fs.readFileSync('/etc/os-release', 'utf-8');
         const nameLine = data.split('\n').find(line => line.startsWith('PRETTY_NAME='));
         return nameLine ? nameLine.split('=')[1].replace(/"/g, '') : 'Unknown Linux';
     } catch {
         return 'Unknown OS';
+    }
+}
+
+function getCPUUsage() {
+    const cpus = os.cpus();
+    let idle = 0, total = 0;
+
+    cpus.forEach(core => {
+        for (let type in core.times) {
+            total += core.times[type];
+        }
+        idle += core.times.idle;
+    });
+
+    const usage = 100 - Math.round((idle / total) * 100);
+    return `${usage}%`;
+}
+
+function getDiskUsage() {
+    try {
+        const output = execSync("df -h / | awk 'NR==2 {print $3\" / \"$2}'").toString().trim();
+        return output || 'Unavailable';
+    } catch {
+        return 'Unavailable';
     }
 }
 
@@ -60,6 +85,8 @@ async (conn, mek, m, { from, sender, reply }) => {
         const uptimeSeconds = process.uptime();
         const uptimeBar = getUptimeBar(uptimeSeconds);
         const uptimeText = runtime(uptimeSeconds);
+        const cpuUsage = getCPUUsage();
+        const diskUsage = getDiskUsage();
 
         const status = `*📡 SHABAN MD V5*
 
@@ -69,7 +96,9 @@ async (conn, mek, m, { from, sender, reply }) => {
 🎯 *Mode:* ${config.MODE}  
 🎛️ *Prefix:* ${config.PREFIX}
 
-💾 *RAM Usage:* ${ramUsed}MB / ${ramTotal}MB  
+💾 *RAM:* ${ramUsed}MB / ${ramTotal}MB  
+🧠 *CPU:* ${cpuUsage}  
+💽 *Disk:* ${diskUsage}  
 ⏱️ *Uptime:* ${uptimeText}  
 📊 *Bar:* ${uptimeBar}
 
