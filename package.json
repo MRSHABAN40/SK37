@@ -4,9 +4,7 @@
   "description": "A WhatsApp Bot Created By Mr Shaban",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "stop": "pm2 stop SHABAN-MD",
-    "restart": "pm2 restart SHABAN-MD"
+    "start": "node index.js"
   },
   "dependencies": {
     "@whiskeysockets/baileys": "6.7.9",
@@ -16,7 +14,6 @@
     "@vitalets/google-translate-api": "^9.2.0",
     "@dark-yasiya/scrap": "1.0.1",
     "pino": "^7.0.5",
-    "pm2": "^6.0.5",
     "util": "^0.12.4",
     "express": "5.1.0",
     "moment-timezone": "^0.5.45",
